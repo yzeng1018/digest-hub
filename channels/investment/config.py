@@ -18,6 +18,7 @@ TWITTER_HANDLES = [
     {"name": "Brad Gerstner",    "handle": "altcap"},          # Altimeter Capital CEO
     {"name": "Chamath",          "handle": "chamath"},         # Social Capital, SPAC 王
     {"name": "ARK Invest",       "handle": "ARKInvest"},       # Cathie Wood 旗舰基金
+    {"name": "Bill Ackman",      "handle": "BillAckman"},      # Pershing Square，激进投资人
 ]
 
 TWITTER_MAX_PER_HANDLE = 5   # 每个账号最多抓取条数
@@ -159,6 +160,40 @@ SOURCES = [
 
 # Hacker News：抓取评分最高的 top stories（投资相关关键词过滤）
 HN_TOP_COUNT = 15
+
+# ── ARK ETF 每日持仓 CSV ──────────────────────────────────────────────────────
+# ARK 每天更新当日持仓，通过 CSV 直接获取
+ARK_FUND_CSVS = [
+    {
+        "name": "ARK Innovation (ARKK)",
+        "ticker": "ARKK",
+        "url": "https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv",
+    },
+    {
+        "name": "ARK Next Gen Internet (ARKW)",
+        "ticker": "ARKW",
+        "url": "https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_NEXT_GENERATION_INTERNET_ETF_ARKW_HOLDINGS.csv",
+    },
+    {
+        "name": "ARK Genomic Revolution (ARKG)",
+        "ticker": "ARKG",
+        "url": "https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_GENOMIC_REVOLUTION_ETF_ARKG_HOLDINGS.csv",
+    },
+]
+
+# ── SEC EDGAR 13F 申报监控 ─────────────────────────────────────────────────────
+# 用 SEC Atom RSS 追踪顶级机构的季度持仓申报，使用更长的时间窗口
+SEC_13F_SOURCES = [
+    {"name": "Berkshire Hathaway (Buffett)",  "cik": "0001067983"},
+    {"name": "Pershing Square (Ackman)",      "cik": "0001336528"},
+    {"name": "Duquesne Capital (Druckenmiller)", "cik": "0001064290"},
+    {"name": "Soros Fund Management",         "cik": "0001029160"},
+    {"name": "Renaissance Technologies",      "cik": "0001037389"},
+    {"name": "Altimeter Capital",             "cik": "0001418819"},
+    {"name": "Appaloosa (Tepper)",            "cik": "0001141119"},
+]
+# 13F 为季度申报，使用7天窗口以捕获最新提交
+SEC_13F_WINDOW_DAYS = 7
 
 # ── 时间窗口 ──────────────────────────────────────────────────────────────────
 TIME_WINDOW_HOURS = 24
