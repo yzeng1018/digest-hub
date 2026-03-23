@@ -1,0 +1,159 @@
+"""AI情报 邮件模块：构建 HTML 后调用 common.mailer 发送。"""
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # digest-hub/
+
+from datetime import datetime
+from common.mailer import send_html
+
+
+def _score_color(score: int) -> str:
+    if score >= 8:
+        return "#f85149"
+    if score >= 6:
+        return "#e3b341"
+    return "#3fb950"
+
+
+def _score_label(score: int) -> str:
+    if score >= 8:
+        return "必读"
+    if score >= 6:
+        return "重要"
+    return "一般"
+
+
+def _platform_label(platform: str) -> str:
+    return {"X": "𝕏", "即刻": "即刻", "Blog": "Blog"}.get(platform, platform)
+
+
+def _build_email_html(articles: list[dict], date_str: str) -> str:
+    rows = ""
+    for art in articles:
+        sc         = art.get("score", 5)
+        color      = _score_color(sc)
+        label      = _score_label(sc)
+        title_zh   = art.get("title_zh") or art.get("title", "")
+        title_en   = art.get("title", "") if art.get("lang") == "en" else ""
+        summary    = art.get("summary_zh") or art.get("summary", "")
+        reason     = art.get("reason_zh", "")
+        background = art.get("background_zh", "")
+        source     = art.get("source", "")
+        platform   = _platform_label(art.get("platform", ""))
+        url        = art.get("url", "#")
+
+        title_en_row = (
+            f'<div style="font-size:12px;color:#8b949e;margin-top:3px;">{title_en}</div>'
+            if title_en else ""
+        )
+        background_row = (
+            f'<div style="margin-top:8px;padding:6px 10px;background:#0d2137;'
+            f'border-radius:4px;font-size:12px;color:#79c0ff;">📖 {background}</div>'
+            if background else ""
+        )
+        reason_row = (
+            f'<div style="margin-top:8px;padding:6px 10px;background:#0d2010;'
+            f'border-radius:4px;font-size:12px;color:#56d364;">💡 {reason}</div>'
+            if reason else ""
+        )
+
+        rows += f"""
+<tr>
+  <td style="padding:16px 20px;border-bottom:1px solid #21262d;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="48" valign="top" style="padding-right:12px;">
+          <div style="width:42px;height:42px;border-radius:8px;
+                      background:{color}1a;text-align:center;line-height:42px;
+                      font-size:18px;font-weight:800;color:{color};">{sc}</div>
+        </td>
+        <td valign="top">
+          <div style="font-size:15px;font-weight:600;color:#e6edf3;line-height:1.4;">
+            <a href="{url}" style="color:#e6edf3;text-decoration:none;">{title_zh}</a>
+          </div>
+          {title_en_row}
+          <div style="margin-top:6px;">
+            <span style="display:inline-block;padding:1px 7px;border-radius:3px;
+                         font-size:11px;font-weight:700;color:{color};background:{color}1a;">{label}</span>
+            <span style="display:inline-block;padding:1px 7px;border-radius:3px;
+                         font-size:11px;color:#8b949e;background:#161b22;
+                         border:1px solid #30363d;margin-left:4px;">{source}</span>
+            <span style="display:inline-block;padding:1px 7px;border-radius:3px;
+                         font-size:11px;color:#8b949e;background:#161b22;
+                         border:1px solid #30363d;margin-left:4px;">{platform}</span>
+          </div>
+          <div style="margin-top:8px;font-size:13px;color:#8b949e;line-height:1.65;">
+            {summary}
+          </div>
+          {background_row}
+          {reason_row}
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>"""
+
+    must_count = sum(1 for a in articles if a.get("score", 0) >= 8)
+    imp_count  = sum(1 for a in articles if 6 <= a.get("score", 0) < 8)
+
+    body = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0d1117;
+             font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0d1117;padding:24px 0;">
+<tr><td align="center">
+<table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;">
+  <tr>
+    <td style="background:linear-gradient(135deg,#161b22,#0d1117);
+               border-radius:12px 12px 0 0;padding:28px 24px;text-align:center;">
+      <div style="font-size:22px;font-weight:800;color:#e6edf3;letter-spacing:0.5px;">
+        每日 <span style="color:#58a6ff;">AI</span> 情报
+      </div>
+      <div style="margin-top:6px;font-size:13px;color:#8b949e;">{date_str}</div>
+      <div style="margin-top:12px;">
+        <span style="display:inline-block;padding:3px 12px;border-radius:20px;
+                     background:rgba(248,81,73,0.15);color:#f85149;font-size:12px;font-weight:600;">
+          🔥 必读 {must_count}
+        </span>
+        <span style="display:inline-block;padding:3px 12px;border-radius:20px;
+                     background:rgba(227,179,65,0.15);color:#e3b341;font-size:12px;font-weight:600;margin-left:8px;">
+          ⚡ 重要 {imp_count}
+        </span>
+        <span style="display:inline-block;padding:3px 12px;border-radius:20px;
+                     background:rgba(255,255,255,0.05);color:#8b949e;font-size:12px;margin-left:8px;">
+          共 {len(articles)} 条
+        </span>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#161b22;border-radius:0 0 12px 12px;
+               border:1px solid #21262d;border-top:none;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        {rows}
+        <tr>
+          <td style="padding:14px 20px;text-align:center;background:#0d1117;
+                     border-radius:0 0 12px 12px;">
+            <div style="font-size:11px;color:#484f58;">
+              AI 自动生成 · 来源：X / 即刻 / Substack / Blog
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>"""
+    return body
+
+
+def send_digest(articles: list[dict]) -> None:
+    date_str = datetime.now().strftime("%Y年%m月%d日")
+    subject  = f"每日 AI 情报 · {datetime.now().strftime('%Y-%m-%d')}"
+    html     = _build_email_html(articles, date_str)
+    send_html(subject, html)
