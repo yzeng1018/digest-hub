@@ -1,16 +1,24 @@
 """
 投资情报抓取器。
 信源：RSS（Crunchbase/TechCrunch/a16z/投资界等）+ Hacker News API（投资关键词过滤）
+     + X/Twitter KOLs via Nitter RSS（顶级投资人账号）
 """
 
+import html
 import re
 import time
 from datetime import datetime, timezone, timedelta
 
 import feedparser
 import requests
+import urllib3
 
-from config import SOURCES, HN_TOP_COUNT, TIME_WINDOW_HOURS
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+from config import (
+    SOURCES, HN_TOP_COUNT, TIME_WINDOW_HOURS,
+    NITTER_INSTANCES, TWITTER_HANDLES, TWITTER_MAX_PER_HANDLE,
+)
 
 
 _HEADERS = {
@@ -18,10 +26,19 @@ _HEADERS = {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
-    )
+    ),
+    "Accept": "application/rss+xml, application/xml, text/xml, */*",
 }
 
 _CUTOFF = timedelta(hours=TIME_WINDOW_HOURS)
+
+
+def _clean(text: str) -> str:
+    if not text:
+        return ""
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
+    return " ".join(text.split())[:600]
 
 
 def _parse_dt(entry) -> datetime | None:
@@ -45,7 +62,7 @@ def _is_recent(entry) -> bool:
 def _fetch_rss(source: dict) -> list[dict]:
     articles = []
     try:
-        resp = requests.get(source["url"], timeout=15, headers=_HEADERS)
+        resp = requests.get(source["url"], timeout=15, headers=_HEADERS, verify=False)
         feed = feedparser.parse(resp.content)
     except Exception as exc:
         print(f"  [WARN] {source['name']}: {exc}")
@@ -55,14 +72,10 @@ def _fetch_rss(source: dict) -> list[dict]:
         if not _is_recent(entry):
             continue
         title   = getattr(entry, "title", "").strip()
-        summary = getattr(entry, "summary", "") or getattr(entry, "description", "")
+        summary = _clean(getattr(entry, "summary", "") or getattr(entry, "description", ""))
         url     = getattr(entry, "link", "")
         if not title or not url:
             continue
-
-        # 清理 HTML tags
-        summary = re.sub(r"<[^>]+>", " ", summary)
-        summary = " ".join(summary.split())[:500]
 
         articles.append({
             "id":       url,
@@ -75,6 +88,93 @@ def _fetch_rss(source: dict) -> list[dict]:
             "priority": source.get("priority", 2),
         })
     return articles
+
+
+# ─── Twitter/X via Nitter ─────────────────────────────────────────────────────
+
+_PROBE_TIMEOUT = 4
+
+
+def _probe_nitter_instance(instance: str) -> bool:
+    test_url = f"{instance.rstrip('/')}/elonmusk/rss"
+    try:
+        resp = requests.get(test_url, headers=_HEADERS, timeout=_PROBE_TIMEOUT, verify=False)
+        return resp.status_code == 200 and len(resp.content) > 500
+    except Exception:
+        return False
+
+
+def _find_live_nitter() -> list[str]:
+    live = []
+    for inst in NITTER_INSTANCES:
+        if _probe_nitter_instance(inst):
+            live.append(inst)
+            print(f"    ✓ nitter 可用: {inst}")
+        else:
+            print(f"    ✗ nitter 不可用: {inst}")
+    return live
+
+
+def _fetch_twitter_handle(kol: dict, live: list[str], cutoff: datetime) -> list[dict]:
+    handle = kol["handle"]
+    name   = kol["name"]
+    for instance in live:
+        url = f"{instance.rstrip('/')}/{handle}/rss"
+        articles = []
+        try:
+            resp = requests.get(url, headers=_HEADERS, timeout=12, verify=False)
+            if resp.status_code != 200:
+                continue
+            feed = feedparser.parse(resp.content)
+        except Exception:
+            time.sleep(0.2)
+            continue
+
+        count = 0
+        for entry in feed.entries:
+            if count >= TWITTER_MAX_PER_HANDLE:
+                break
+            pub = _parse_dt(entry)
+            if pub and pub < cutoff:
+                continue
+            title   = _clean(getattr(entry, "title", ""))
+            summary = _clean(getattr(entry, "summary", "") or getattr(entry, "description", ""))
+            link    = getattr(entry, "link", "")
+            if not title:
+                continue
+            articles.append({
+                "id":       link or title,
+                "title":    title,
+                "summary":  summary,
+                "url":      link,
+                "source":   f"{name} (@{handle})",
+                "platform": "X",
+                "lang":     "en",
+                "priority": 3,
+            })
+            count += 1
+
+        if articles:
+            return articles
+        time.sleep(0.2)
+    return []
+
+
+def _fetch_twitter(cutoff: datetime) -> list[dict]:
+    print(f"  → X/Twitter ({len(TWITTER_HANDLES)} 顶级投资人 via nitter)")
+    print("    探测 nitter 实例…")
+    live = _find_live_nitter()
+    if not live:
+        print("    [WARN] 所有 nitter 实例均不可用，跳过 Twitter 抓取")
+        return []
+
+    all_articles = []
+    for kol in TWITTER_HANDLES:
+        arts = _fetch_twitter_handle(kol, live, cutoff)
+        all_articles.extend(arts)
+        print(f"    @{kol['handle']}: {len(arts)} 条")
+        time.sleep(0.3)
+    return all_articles
 
 
 def _fetch_hn() -> list[dict]:
@@ -150,6 +250,10 @@ def fetch_all() -> list[dict]:
     hn_items = _fetch_hn()
     articles.extend(hn_items)
     print(f"  Hacker News (投资相关): {len(hn_items)} 条")
+
+    cutoff = datetime.now(timezone.utc) - _CUTOFF
+    twitter_items = _fetch_twitter(cutoff)
+    articles.extend(twitter_items)
 
     print(f"共抓取 {len(articles)} 条投资情报。")
     return articles

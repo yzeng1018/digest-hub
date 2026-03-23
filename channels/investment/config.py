@@ -2,6 +2,26 @@
 投资情报源配置 — 专注 VC 融资、IPO、创业并购动态。
 """
 
+# ── Nitter 实例（按优先级排列，自动 fallback）────────────────────────────────
+NITTER_INSTANCES = [
+    "https://nitter.net",
+    "https://nitter.privacydev.net",
+    "https://nitter.poast.org",
+    "https://nitter.woodland.cafe",
+    "https://nitter.1d4.us",
+    "https://nitter.fdn.fr",
+]
+
+# ── 顶级投资人 Twitter 账号 ───────────────────────────────────────────────────
+TWITTER_HANDLES = [
+    {"name": "Michael Burry",    "handle": "michaeljburry"},   # Big Short 原型，宏观对冲
+    {"name": "Brad Gerstner",    "handle": "altcap"},          # Altimeter Capital CEO
+    {"name": "Chamath",          "handle": "chamath"},         # Social Capital, SPAC 王
+    {"name": "ARK Invest",       "handle": "ARKInvest"},       # Cathie Wood 旗舰基金
+]
+
+TWITTER_MAX_PER_HANDLE = 5   # 每个账号最多抓取条数
+
 # ── RSS 信源 ──────────────────────────────────────────────────────────────────
 SOURCES = [
     # ── US Venture / Startup News ────────────────────────────────────────────
@@ -89,6 +109,50 @@ SOURCES = [
         "name": "虎嗅",
         "url": "https://www.huxiu.com/rss/0.xml",
         "lang": "zh",
+        "priority": 2,
+    },
+    # ── Legendary Investor Memos / Newsletters ────────────────────────────────
+    {
+        "name": "Howard Marks (Oaktree)",
+        "url": "https://www.oaktreecapital.com/insights/memos/rss",
+        "lang": "en",
+        "priority": 3,
+    },
+    {
+        "name": "Fundsmith (Terry Smith)",
+        "url": "https://www.fundsmith.co.uk/rss",
+        "lang": "en",
+        "priority": 3,
+    },
+    {
+        "name": "Altimeter Capital",
+        "url": "https://altimeter.com/feed",
+        "lang": "en",
+        "priority": 3,
+    },
+    # ── Investment Podcasts ───────────────────────────────────────────────────
+    {
+        "name": "Invest Like the Best",
+        "url": "https://feeds.megaphone.fm/investlikethebest",
+        "lang": "en",
+        "priority": 3,
+    },
+    {
+        "name": "All-In Podcast",
+        "url": "https://feeds.megaphone.fm/all-in-with-chamath-jason-sacks-friedberg",
+        "lang": "en",
+        "priority": 3,
+    },
+    {
+        "name": "We Study Billionaires",
+        "url": "https://feeds.megaphone.fm/WSB",
+        "lang": "en",
+        "priority": 2,
+    },
+    {
+        "name": "Capital Allocators",
+        "url": "https://feeds.megaphone.fm/capital-allocators",
+        "lang": "en",
         "priority": 2,
     },
 ]
