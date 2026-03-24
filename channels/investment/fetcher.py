@@ -20,7 +20,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from config import (
-    SOURCES, HN_TOP_COUNT, TIME_WINDOW_HOURS,
+    SOURCES, HN_TOP_COUNT, TIME_WINDOW_HOURS, INSIGHT_WINDOW_DAYS,
     NITTER_INSTANCES, TWITTER_HANDLES, TWITTER_MAX_PER_HANDLE,
     ARK_FUND_CSVS, SEC_13F_SOURCES, SEC_13F_WINDOW_DAYS,
 )
@@ -36,6 +36,8 @@ _HEADERS = {
 }
 
 _CUTOFF = timedelta(hours=TIME_WINDOW_HOURS)
+_INSIGHT_CUTOFF = timedelta(days=INSIGHT_WINDOW_DAYS)
+_INSIGHT_PLATFORMS = {"Blog", "Memo", "Podcast"}
 
 
 def _clean(text: str) -> str:
@@ -66,6 +68,11 @@ def _is_recent(entry) -> bool:
 
 def _fetch_rss(source: dict) -> list[dict]:
     articles = []
+    is_insight = source.get("platform") in _INSIGHT_PLATFORMS
+    cutoff = datetime.now(timezone.utc) - (
+        _INSIGHT_CUTOFF if is_insight else _CUTOFF
+    )
+
     try:
         resp = requests.get(source["url"], timeout=15, headers=_HEADERS, verify=False)
         feed = feedparser.parse(resp.content)
@@ -74,7 +81,8 @@ def _fetch_rss(source: dict) -> list[dict]:
         return []
 
     for entry in feed.entries:
-        if not _is_recent(entry):
+        dt = _parse_dt(entry)
+        if dt is not None and dt < cutoff:
             continue
         title   = getattr(entry, "title", "").strip()
         summary = _clean(getattr(entry, "summary", "") or getattr(entry, "description", ""))
