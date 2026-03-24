@@ -18,8 +18,9 @@ from renderer import render
 from mailer   import send_digest
 from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT
 
-from common.dedup  import deduplicate
-from common.scorer import score_articles
+from common.dedup     import deduplicate
+from common.scorer    import score_articles, get_usage
+from common.reporter  import report_to_gateway
 
 
 def main():
@@ -45,9 +46,12 @@ def main():
             art["data_point_zh"] = ""
             art["title_zh"] = art["title"]
             art["summary_zh"] = art["summary"]
+        usage_info = {}
     else:
         print(f"Scoring {len(articles)} articles with Qwen…")
         articles = score_articles(articles, SCORING_SYSTEM_PROMPT, batch_size=25)
+        usage_info = get_usage()
+        report_to_gateway(usage_info, project="digest-hub/general-news")
 
     articles.sort(key=lambda a: -a["score"])
     articles = articles[:MAX_ARTICLES]
@@ -67,7 +71,7 @@ def main():
     render(articles, output_path)
 
     if not args.no_email:
-        send_digest(articles)
+        send_digest(articles, usage_info=usage_info)
 
     must_reads = sum(1 for a in articles if a["score"] >= 8)
     print(f"\n✅ Done. {len(articles)} articles · {must_reads} must-reads")

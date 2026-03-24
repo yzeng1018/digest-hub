@@ -15,6 +15,8 @@ import os
 import re
 import time
 
+import httpx
+import openai as _openai
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
@@ -23,6 +25,41 @@ from config import ENRICH_MIN_SCORE, ENRICH_MAX_COUNT
 
 QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 QWEN_MODEL = "qwen-plus"   # cheaper model fine for enrichment
+GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
+GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
+
+GLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
+GLM_MODEL    = "glm-4-flash"
+
+
+def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
+    """三级 fallback：本地网关（绕过代理）→ DashScope 直连 → GLM-4-Flash。"""
+    # 1. 本地网关（强制绕过系统代理）
+    try:
+        c = OpenAI(
+            api_key=GATEWAY_API_KEY,
+            base_url=GATEWAY_URL,
+            http_client=httpx.Client(trust_env=False),
+        )
+        return c.chat.completions.create(model="auto", messages=messages, **kwargs)
+    except Exception:
+        pass
+
+    # 2. DashScope 直连
+    try:
+        api_key = os.environ.get("QWEN_API_KEY") or os.environ.get("DASHSCOPE_API_KEY", "")
+        if api_key:
+            c = OpenAI(api_key=api_key, base_url=QWEN_BASE_URL)
+            return c.chat.completions.create(model=model, messages=messages, **kwargs)
+    except Exception:
+        pass
+
+    # 3. GLM 兜底
+    glm_key = os.environ.get("ZHIPU_API_KEY", "")
+    if not glm_key:
+        raise RuntimeError("所有 provider 均失败，且未配置 ZHIPU_API_KEY")
+    c = OpenAI(api_key=glm_key, base_url=GLM_BASE_URL)
+    return c.chat.completions.create(model=GLM_MODEL, messages=messages, **kwargs)
 
 ENRICH_SYSTEM = """你是一位顶级的科技创业者和风险投资人。
 给定一篇新闻文章的完整正文（或网络搜索摘要），请提取以下4个字段：
@@ -81,7 +118,7 @@ def _ddg_search(query: str, max_results: int = 3) -> list[str]:
         return []
 
 
-def _enrich_one(client: OpenAI, art: dict) -> None:
+def _enrich_one(art: dict) -> None:
     """Enrich a single article in-place."""
     # Primary: fetch full article body
     body = _fetch_article_body(art.get("url", ""))
@@ -107,8 +144,7 @@ def _enrich_one(client: OpenAI, art: dict) -> None:
 {search_context}
 """
     try:
-        resp = client.chat.completions.create(
-            model=QWEN_MODEL,
+        resp = _complete(
             messages=[
                 {"role": "system", "content": ENRICH_SYSTEM},
                 {"role": "user", "content": user_msg},
@@ -157,11 +193,10 @@ def enrich_articles(articles: list[dict]) -> list[dict]:
         return articles
 
     print(f"Enriching {len(targets)} top articles with web search…")
-    client = OpenAI(api_key=api_key, base_url=QWEN_BASE_URL)
 
     for i, art in enumerate(targets, 1):
         print(f"  [{i}/{len(targets)}] {art['title'][:55]}…")
-        _enrich_one(client, art)
+        _enrich_one(art)
 
     # ensure all enrichment fields exist on all articles
     for art in articles:

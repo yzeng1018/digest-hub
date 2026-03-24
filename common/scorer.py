@@ -9,10 +9,63 @@ import os
 import re
 from collections.abc import Callable
 
+import httpx
+import openai as _openai
 from openai import OpenAI
 
 QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-QWEN_MODEL = "qwen-max"
+QWEN_MODEL    = "qwen-max"
+GATEWAY_URL   = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
+GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
+
+# GLM 兜底（glm-4-flash 永久免费）
+GLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
+GLM_MODEL    = "glm-4-flash"
+
+# 模块级 usage 累计器，每次 score_articles 调用前重置
+_usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+
+def get_usage() -> dict:
+    """返回最近一次 score_articles 调用的 token 消耗统计。"""
+    return dict(_usage)
+
+
+def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
+    """
+    三级 fallback 链：本地网关 → DashScope 直连 → GLM-4-Flash。
+    本地网关请求强制绕过系统代理（trust_env=False），避免 http_proxy 拦截 localhost。
+    """
+    # 1. 本地网关（绕过系统代理）
+    try:
+        c = OpenAI(
+            api_key=GATEWAY_API_KEY,
+            base_url=GATEWAY_URL,
+            http_client=httpx.Client(trust_env=False),
+        )
+        resp = c.chat.completions.create(model="auto", messages=messages, **kwargs)
+        return resp, "gateway"
+    except Exception as e:
+        print(f"  [gateway] 不可用 ({type(e).__name__})，切换 DashScope…")
+
+    # 2. DashScope 直连
+    try:
+        api_key = os.environ.get("QWEN_API_KEY") or os.environ.get("DASHSCOPE_API_KEY", "")
+        if api_key:
+            c = OpenAI(api_key=api_key, base_url=QWEN_BASE_URL)
+            resp = c.chat.completions.create(model=model, messages=messages, **kwargs)
+            return resp, "dashscope"
+    except Exception as e:
+        print(f"  [dashscope] 失败 ({type(e).__name__}: {e})，切换 GLM…")
+
+    # 3. GLM 兜底
+    glm_key = os.environ.get("ZHIPU_API_KEY", "")
+    if not glm_key:
+        raise RuntimeError("所有 provider 均失败，且未配置 ZHIPU_API_KEY（GLM 兜底不可用）")
+    print(f"  [glm] 使用 {GLM_MODEL} 兜底…")
+    c = OpenAI(api_key=glm_key, base_url=GLM_BASE_URL)
+    resp = c.chat.completions.create(model=GLM_MODEL, messages=messages, **kwargs)
+    return resp, "glm"
 
 USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
 
@@ -73,7 +126,11 @@ def score_articles(
     """
     对文章列表评分 + 翻译，修改原列表并返回。
     summary_fn: 从 article dict 提取送给 Qwen 的摘要文本，默认取 summary[:300]。
+    调用结束后可通过 get_usage() 获取 token 消耗。
     """
+    global _usage
+    _usage = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
     if summary_fn is None:
         summary_fn = _default_summary_fn
 
@@ -86,8 +143,6 @@ def score_articles(
             art["title_zh"] = art["title"]
             art["summary_zh"] = art["summary"]
         return articles
-
-    client = OpenAI(api_key=api_key, base_url=QWEN_BASE_URL)
 
     for batch_start in range(0, len(articles), batch_size):
         batch = articles[batch_start: batch_start + batch_size]
@@ -108,8 +163,7 @@ def score_articles(
         user_msg = USER_PROMPT_TEMPLATE.format(count=len(batch), articles_json=payload)
 
         try:
-            resp = client.chat.completions.create(
-                model=QWEN_MODEL,
+            resp, backend = _complete(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_msg},
@@ -117,6 +171,16 @@ def score_articles(
                 max_tokens=4096,
                 timeout=120,
             )
+            # 累计 token 消耗
+            if resp.usage:
+                _usage["prompt_tokens"]     += resp.usage.prompt_tokens
+                _usage["completion_tokens"] += resp.usage.completion_tokens
+                _usage["total_tokens"]      += resp.usage.total_tokens
+            # 记录实际模型名（优先用响应中的，否则用请求参数）
+            if not _usage["model"]:
+                _usage["model"] = getattr(resp, "model", "") or (
+                    "gateway/auto" if backend == "gateway" else QWEN_MODEL
+                )
             results = _parse_response(resp.choices[0].message.content or "")
             _apply_results(batch, results)
         except Exception as exc:

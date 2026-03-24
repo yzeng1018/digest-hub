@@ -20,8 +20,9 @@ from renderer        import render
 from mailer          import send_digest
 from config          import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT
 
-from common.dedup  import deduplicate
-from common.scorer import score_articles
+from common.dedup     import deduplicate
+from common.scorer    import score_articles, get_usage
+from common.reporter  import report_to_gateway
 
 
 def _podcast_summary_fn(art: dict) -> str:
@@ -52,10 +53,13 @@ def main():
             art["reason_zh"] = ""
             art["title_zh"] = art["title"]
             art["summary_zh"] = art["summary"]
+        usage_info = {}
     else:
         print(f"用 Qwen 对 {len(articles)} 条内容评分…")
         articles = score_articles(articles, SCORING_SYSTEM_PROMPT,
                                   batch_size=10, summary_fn=_podcast_summary_fn)
+        usage_info = get_usage()
+        report_to_gateway(usage_info, project="digest-hub/ai-info")
 
     articles.sort(key=lambda a: -a["score"])
     articles = articles[:MAX_ARTICLES]
@@ -73,7 +77,7 @@ def main():
     render(articles, output_path)
 
     if not args.no_email:
-        send_digest(articles)
+        send_digest(articles, usage_info=usage_info)
 
     must_reads = sum(1 for a in articles if a["score"] >= 8)
     print(f"\n✅ 完成。共 {len(articles)} 条 · 必读 {must_reads} 条")

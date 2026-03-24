@@ -9,11 +9,43 @@ import os
 import re
 import time
 
+import openai as _openai
 from openai import OpenAI
 from config import ENRICH_MIN_SCORE, ENRICH_MAX_COUNT
 
-QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-QWEN_MODEL = "qwen-plus"
+QWEN_BASE_URL   = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+QWEN_MODEL      = "qwen-plus"
+GATEWAY_URL     = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
+GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
+GLM_BASE_URL    = "https://open.bigmodel.cn/api/paas/v4"
+GLM_MODEL       = "glm-4-flash"
+
+
+def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
+    """三级 fallback：本地网关（绕过代理） → DashScope → GLM-4-Flash。"""
+    # 1. 本地网关（绕过 http_proxy 系统代理）
+    try:
+        c = OpenAI(api_key=GATEWAY_API_KEY, base_url=GATEWAY_URL,
+                   http_client=httpx.Client(trust_env=False))
+        return c.chat.completions.create(model="auto", messages=messages, **kwargs)
+    except Exception:
+        pass
+
+    # 2. DashScope 直连
+    try:
+        api_key = os.environ.get("QWEN_API_KEY") or os.environ.get("DASHSCOPE_API_KEY", "")
+        if api_key:
+            c = OpenAI(api_key=api_key, base_url=QWEN_BASE_URL)
+            return c.chat.completions.create(model=model, messages=messages, **kwargs)
+    except Exception:
+        pass
+
+    # 3. GLM 兜底
+    glm_key = os.environ.get("ZHIPU_API_KEY", "")
+    if not glm_key:
+        raise RuntimeError("所有 provider 均失败，ZHIPU_API_KEY 未配置")
+    c = OpenAI(api_key=glm_key, base_url=GLM_BASE_URL)
+    return c.chat.completions.create(model=GLM_MODEL, messages=messages, **kwargs)
 
 ENRICH_SYSTEM = """你是一位深度关注 AI 领域的分析师。
 给定一条 AI 内容和网络搜索背景，请生成：
@@ -58,7 +90,7 @@ def _ddg_search(query: str, max_results: int = 3) -> list[str]:
         return []
 
 
-def _enrich_podcast(client: OpenAI, art: dict) -> None:
+def _enrich_podcast(art: dict) -> None:
     transcript_chunk = art["transcript"][:6000]
     user_msg = f"""播客节目：{art['source']}
 集标题：{art['title']}
@@ -67,8 +99,7 @@ def _enrich_podcast(client: OpenAI, art: dict) -> None:
 {transcript_chunk}
 """
     try:
-        resp = client.chat.completions.create(
-            model=QWEN_MODEL,
+        resp = _complete(
             messages=[
                 {"role": "system", "content": PODCAST_ENRICH_SYSTEM},
                 {"role": "user",   "content": user_msg},
@@ -86,9 +117,9 @@ def _enrich_podcast(client: OpenAI, art: dict) -> None:
         art["background_zh"] = ""
 
 
-def _enrich_one(client: OpenAI, art: dict) -> None:
+def _enrich_one(art: dict) -> None:
     if art.get("platform") == "Podcast" and art.get("transcript"):
-        _enrich_podcast(client, art)
+        _enrich_podcast(art)
         return
 
     query = f"{art['title']} AI {art['source']}"
@@ -104,8 +135,7 @@ def _enrich_one(client: OpenAI, art: dict) -> None:
 {context}
 """
     try:
-        resp = client.chat.completions.create(
-            model=QWEN_MODEL,
+        resp = _complete(
             messages=[
                 {"role": "system", "content": ENRICH_SYSTEM},
                 {"role": "user", "content": user_msg},
@@ -139,11 +169,10 @@ def enrich_articles(articles: list[dict]) -> list[dict]:
         return articles
 
     print(f"Enriching {len(targets)} 条高分内容…")
-    client = OpenAI(api_key=api_key, base_url=QWEN_BASE_URL)
 
     for i, art in enumerate(targets, 1):
         print(f"  [{i}/{len(targets)}] {art['title'][:55]}…")
-        _enrich_one(client, art)
+        _enrich_one(art)
 
     for art in articles:
         art.setdefault("background_zh", "")
