@@ -24,7 +24,23 @@ def _score_label(score: int) -> str:
     return "一般"
 
 
-def _build_email_html(articles: list[dict], date_str: str) -> str:
+def _usage_bar(usage_info: dict) -> str:
+    if not usage_info or not usage_info.get("total_tokens"):
+        return ""
+    model  = usage_info.get("model", "qwen-max")
+    prompt = usage_info.get("prompt_tokens", 0)
+    comp   = usage_info.get("completion_tokens", 0)
+    total  = usage_info.get("total_tokens", 0)
+    return (
+        f'<div style="margin-top:10px;padding:6px 14px;background:rgba(255,255,255,0.15);'
+        f'border-radius:8px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">'
+        f'🤖 {model} &nbsp;·&nbsp; '
+        f'↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens'
+        f'</div>'
+    )
+
+
+def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | None = None) -> str:
     rows = ""
     for art in articles:
         sc           = art.get("score", 5)
@@ -32,7 +48,9 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
         label        = _score_label(sc)
         title_zh     = art.get("title_zh") or art.get("title", "")
         title_en     = art.get("title", "") if art.get("lang") == "en" else ""
-        summary      = art.get("summary_zh") or art.get("summary", "")
+        summary_zh   = art.get("summary_zh", "")
+        summary_en   = art.get("summary", "")
+        summary      = summary_zh or summary_en
         reason       = art.get("reason_zh", "")
         background   = art.get("background_zh", "")
         key_players  = art.get("key_players_zh", "")
@@ -90,6 +108,7 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
           <div style="margin-top:8px;font-size:13px;color:#495057;line-height:1.65;">
             {summary}
           </div>
+          {"" if not (art.get("lang") == "en" and summary_zh and summary_en) else f'<div style="margin-top:5px;font-size:12px;color:#868e96;font-style:italic;line-height:1.5;">{summary_en}</div>'}
           {background_row}
           {key_players_row}
           {data_point_row}
@@ -118,6 +137,7 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
         每日科技财经速读
       </div>
       <div style="margin-top:6px;font-size:13px;color:rgba(255,255,255,0.8);">{date_str}</div>
+      {_usage_bar(usage_info or {})}
       <div style="margin-top:12px;">
         <span style="display:inline-block;padding:3px 12px;border-radius:20px;
                      background:rgba(255,107,107,0.25);color:#ff6b6b;font-size:12px;font-weight:600;">
@@ -158,8 +178,8 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
     return body
 
 
-def send_digest(articles: list[dict]) -> None:
+def send_digest(articles: list[dict], usage_info: dict | None = None) -> None:
     date_str = datetime.now().strftime("%Y年%m月%d日")
     subject  = f"每日科技财经速读 · {datetime.now().strftime('%Y-%m-%d')}"
-    html     = _build_email_html(articles, date_str)
+    html     = _build_email_html(articles, date_str, usage_info=usage_info)
     send_html(subject, html)

@@ -10,10 +10,10 @@ from common.mailer import send_html
 
 def _score_color(score: int) -> str:
     if score >= 8:
-        return "#f85149"
+        return "#ff6b6b"
     if score >= 6:
-        return "#e3b341"
-    return "#3fb950"
+        return "#ffa94d"
+    return "#74c0fc"
 
 
 def _score_label(score: int) -> str:
@@ -24,14 +24,32 @@ def _score_label(score: int) -> str:
     return "一般"
 
 
-def _build_email_html(articles: list[dict], date_str: str) -> str:
+def _usage_bar(usage_info: dict) -> str:
+    if not usage_info or not usage_info.get("total_tokens"):
+        return ""
+    model  = usage_info.get("model", "qwen-max")
+    prompt = usage_info.get("prompt_tokens", 0)
+    comp   = usage_info.get("completion_tokens", 0)
+    total  = usage_info.get("total_tokens", 0)
+    return (
+        f'<div style="margin-top:10px;padding:6px 14px;background:rgba(255,255,255,0.15);'
+        f'border-radius:8px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">'
+        f'🤖 {model} &nbsp;·&nbsp; '
+        f'↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens'
+        f'</div>'
+    )
+
+
+def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | None = None) -> str:
     rows = ""
     for art in articles:
         sc          = art.get("score", 5)
         color       = _score_color(sc)
         label       = _score_label(sc)
         title_zh    = art.get("title_zh") or art.get("title", "")
-        summary     = art.get("summary_zh") or art.get("summary", "")
+        summary_zh  = art.get("summary_zh", "")
+        summary_en  = art.get("summary", "")
+        summary     = summary_zh or summary_en
         reason      = art.get("reason_zh", "")
         background  = art.get("background_zh", "")
         key_players = art.get("key_players_zh", "")
@@ -41,32 +59,48 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
 
         extra = ""
         if background:
-            extra += f'<div style="margin-top:8px;padding:6px 10px;background:#0d2137;border-radius:4px;font-size:12px;color:#79c0ff;">📖 {background}</div>'
+            extra += (
+                f'<div style="margin-top:8px;padding:6px 10px;background:#e8f4fd;'
+                f'border-radius:4px;font-size:12px;color:#1c7ed6;">📖 {background}</div>'
+            )
         if key_players:
-            extra += f'<div style="margin-top:6px;padding:6px 10px;background:#1f1a00;border-radius:4px;font-size:12px;color:#e3c000;">👥 {key_players}</div>'
+            extra += (
+                f'<div style="margin-top:6px;padding:6px 10px;background:#fff3cd;'
+                f'border-radius:4px;font-size:12px;color:#856404;">👥 {key_players}</div>'
+            )
         if data_point:
-            extra += f'<div style="margin-top:6px;padding:6px 10px;background:#0d2010;border-radius:4px;font-size:12px;color:#56d364;">📊 {data_point}</div>'
+            extra += (
+                f'<div style="margin-top:6px;padding:6px 10px;background:#d4edda;'
+                f'border-radius:4px;font-size:12px;color:#155724;">📊 {data_point}</div>'
+            )
         if reason:
-            extra += f'<div style="margin-top:6px;padding:6px 10px;background:#1a0d2e;border-radius:4px;font-size:12px;color:#c084fc;">💡 {reason}</div>'
+            extra += (
+                f'<div style="margin-top:6px;padding:6px 10px;background:#e2e3e5;'
+                f'border-radius:4px;font-size:12px;color:#383d41;">💡 {reason}</div>'
+            )
 
         rows += f"""
 <tr>
-  <td style="padding:16px 20px;border-bottom:1px solid #21262d;">
+  <td style="padding:16px 20px;border-bottom:1px solid #dee2e6;">
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td width="48" valign="top" style="padding-right:12px;">
-          <div style="width:42px;height:42px;border-radius:8px;background:{color}1a;
+          <div style="width:42px;height:42px;border-radius:8px;background:{color}22;
                       text-align:center;line-height:42px;font-size:18px;font-weight:800;color:{color};">{sc}</div>
         </td>
         <td valign="top">
-          <div style="font-size:15px;font-weight:600;color:#e6edf3;line-height:1.4;">
-            <a href="{url}" style="color:#e6edf3;text-decoration:none;">{title_zh}</a>
+          <div style="font-size:15px;font-weight:600;color:#212529;line-height:1.4;">
+            <a href="{url}" style="color:#212529;text-decoration:none;">{title_zh}</a>
           </div>
           <div style="margin-top:6px;">
-            <span style="display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:700;color:{color};background:{color}1a;">{label}</span>
-            <span style="display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;color:#8b949e;background:#21262d;margin-left:4px;">{source}</span>
+            <span style="display:inline-block;padding:1px 7px;border-radius:3px;
+                         font-size:11px;font-weight:700;color:{color};background:{color}22;">{label}</span>
+            <span style="display:inline-block;padding:1px 7px;border-radius:3px;
+                         font-size:11px;color:#6c757d;background:#f8f9fa;
+                         border:1px solid #dee2e6;margin-left:4px;">{source}</span>
           </div>
-          <div style="margin-top:8px;font-size:13px;color:#8b949e;line-height:1.65;">{summary}</div>
+          <div style="margin-top:8px;font-size:13px;color:#495057;line-height:1.65;">{summary}</div>
+          {"" if not (art.get("lang") == "en" and summary_zh and summary_en) else f'<div style="margin-top:5px;font-size:12px;color:#868e96;font-style:italic;line-height:1.5;">{summary_en}</div>'}
           {extra}
         </td>
       </tr>
@@ -80,30 +114,46 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
     body = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#0d1117;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#0d1117;padding:24px 0;">
+<body style="margin:0;padding:0;background:#f8f9fa;
+             font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fa;padding:24px 0;">
 <tr><td align="center">
 <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;">
   <tr>
-    <td style="background:linear-gradient(135deg,#1a1f2c,#0d1117);border-radius:12px 12px 0 0;padding:28px 24px;text-align:center;">
-      <div style="font-size:22px;font-weight:800;color:#e6edf3;">
-        每日 <span style="color:#f0c040;">投资</span> 情报
+    <td style="background:linear-gradient(135deg,#e67700,#c25f00);
+               border-radius:12px 12px 0 0;padding:28px 24px;text-align:center;">
+      <div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:0.5px;">
+        每日投资情报
       </div>
-      <div style="margin-top:6px;font-size:13px;color:#8b949e;">{date_str}</div>
+      <div style="margin-top:6px;font-size:13px;color:rgba(255,255,255,0.8);">{date_str}</div>
+      {_usage_bar(usage_info or {})}
       <div style="margin-top:12px;">
-        <span style="display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(248,81,73,0.15);color:#f85149;font-size:12px;font-weight:600;">🔥 必读 {must_count}</span>
-        <span style="display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(227,179,65,0.15);color:#e3b341;font-size:12px;font-weight:600;margin-left:8px;">⚡ 重要 {imp_count}</span>
-        <span style="display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(255,255,255,0.05);color:#8b949e;font-size:12px;margin-left:8px;">共 {len(articles)} 条</span>
+        <span style="display:inline-block;padding:3px 12px;border-radius:20px;
+                     background:rgba(255,107,107,0.25);color:#ff6b6b;font-size:12px;font-weight:600;">
+          🔥 必读 {must_count}
+        </span>
+        <span style="display:inline-block;padding:3px 12px;border-radius:20px;
+                     background:rgba(255,169,77,0.25);color:#ffa94d;font-size:12px;font-weight:600;margin-left:8px;">
+          ⚡ 重要 {imp_count}
+        </span>
+        <span style="display:inline-block;padding:3px 12px;border-radius:20px;
+                     background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);font-size:12px;margin-left:8px;">
+          共 {len(articles)} 条
+        </span>
       </div>
     </td>
   </tr>
   <tr>
-    <td style="background:#161b22;border-radius:0 0 12px 12px;border:1px solid #21262d;border-top:none;">
+    <td style="background:#ffffff;border-radius:0 0 12px 12px;
+               border:1px solid #dee2e6;border-top:none;">
       <table width="100%" cellpadding="0" cellspacing="0">
         {rows}
         <tr>
-          <td style="padding:14px 20px;text-align:center;background:#0d1117;border-radius:0 0 12px 12px;">
-            <div style="font-size:11px;color:#484f58;">AI 自动生成 · 来源：Crunchbase / TechCrunch / a16z / 投资界</div>
+          <td style="padding:14px 20px;text-align:center;background:#f8f9fa;
+                     border-radius:0 0 12px 12px;">
+            <div style="font-size:11px;color:#adb5bd;">
+              AI 自动生成 · 来源：Crunchbase / TechCrunch / a16z / 投资界
+            </div>
           </td>
         </tr>
       </table>
@@ -117,8 +167,8 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
     return body
 
 
-def send_digest(articles: list[dict]) -> None:
+def send_digest(articles: list[dict], usage_info: dict | None = None) -> None:
     date_str = datetime.now().strftime("%Y年%m月%d日")
     subject  = f"每日投资情报 · {datetime.now().strftime('%Y-%m-%d')}"
-    html     = _build_email_html(articles, date_str)
+    html     = _build_email_html(articles, date_str, usage_info=usage_info)
     send_html(subject, html)
