@@ -26,4 +26,5 @@ jobs:
           QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
+          GATEWAY_URL:        https://gateway.asksidra.com/v1
         run: python channels/general-news/main.py
