@@ -88,7 +88,7 @@ def _fetch_rss(source: dict) -> list[dict]:
             "summary":  summary,
             "url":      url,
             "source":   source["name"],
-            "platform": "News",
+            "platform": source.get("platform", "News"),
             "lang":     source["lang"],
             "priority": source.get("priority", 2),
         })

@@ -16,11 +16,39 @@ from fetcher  import fetch_all
 from enricher import enrich_articles
 from renderer import render
 from mailer   import send_digest
-from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT
+from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT, INSIGHT_MIN_RATIO
 
 from common.dedup     import deduplicate
 from common.scorer    import score_articles, get_usage
 from common.reporter  import report_to_gateway
+
+
+_INSIGHT_PLATFORMS = {"Blog", "Memo", "Podcast"}
+
+
+def _apply_insight_quota(
+    articles: list[dict], max_n: int, min_ratio: float
+) -> list[dict]:
+    """
+    从已按分数排序的文章中取最终 max_n 条，
+    同时保证 Blog/Memo/Podcast 至少占 min_ratio。
+    策略：先满足配额槽，剩余槽按分数填充。
+    """
+    min_insight = max(1, int(max_n * min_ratio))
+
+    insight = [a for a in articles if a.get("platform") in _INSIGHT_PLATFORMS]
+    news    = [a for a in articles if a.get("platform") not in _INSIGHT_PLATFORMS]
+
+    # 取配额数量的 insight（已按分数排序）
+    picked_insight = insight[:min_insight]
+    # 剩余槽位用新闻填满
+    remaining = max_n - len(picked_insight)
+    picked_news = news[:remaining]
+
+    # 合并后重新按分数排序，让邮件里高分内容排前面
+    result = picked_insight + picked_news
+    result.sort(key=lambda a: -a["score"])
+    return result
 
 
 def main():
@@ -54,7 +82,7 @@ def main():
         report_to_gateway(usage_info, project="digest-hub/investment")
 
     articles.sort(key=lambda a: -a["score"])
-    articles = articles[:MAX_ARTICLES]
+    articles = _apply_insight_quota(articles, MAX_ARTICLES, INSIGHT_MIN_RATIO)
 
     if not args.no_score:
         articles = enrich_articles(articles)

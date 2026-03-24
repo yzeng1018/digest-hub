@@ -67,24 +67,120 @@ SOURCES = [
         "name": "a16z",
         "url": "https://a16z.com/feed/",
         "lang": "en",
+        "platform": "Blog",
         "priority": 3,
     },
     {
         "name": "Sequoia",
         "url": "https://www.sequoiacap.com/ideas/feed/",
         "lang": "en",
+        "platform": "Blog",
         "priority": 3,
     },
     {
         "name": "First Round Review",
         "url": "https://review.firstround.com/feed",
         "lang": "en",
-        "priority": 2,
+        "platform": "Blog",
+        "priority": 3,
     },
     {
         "name": "Y Combinator Blog",
         "url": "https://www.ycombinator.com/blog/rss/",
         "lang": "en",
+        "platform": "Blog",
+        "priority": 2,
+    },
+    {
+        "name": "Greylock",
+        "url": "https://greylock.com/greymatter/feed/",
+        "lang": "en",
+        "platform": "Blog",
+        "priority": 3,
+    },
+    {
+        "name": "NFX Essays",
+        "url": "https://www.nfx.com/feed",
+        "lang": "en",
+        "platform": "Blog",
+        "priority": 3,
+    },
+    {
+        "name": "USV (Union Square Ventures)",
+        "url": "https://www.usv.com/blog.rss",
+        "lang": "en",
+        "platform": "Blog",
+        "priority": 3,
+    },
+    {
+        "name": "Lux Capital",
+        "url": "https://luxcapital.com/feeds/blog/",
+        "lang": "en",
+        "platform": "Blog",
+        "priority": 2,
+    },
+    {
+        "name": "Index Ventures",
+        "url": "https://www.indexventures.com/perspectives/rss",
+        "lang": "en",
+        "platform": "Blog",
+        "priority": 2,
+    },
+    # ── Legendary Investor Personal Blogs / Memos ─────────────────────────────
+    {
+        "name": "Howard Marks (Oaktree)",
+        "url": "https://www.oaktreecapital.com/insights/memos/rss",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 3,
+    },
+    {
+        "name": "Bill Gurley (Above the Crowd)",
+        "url": "https://abovethecrowd.com/feed/",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 3,
+    },
+    {
+        "name": "Fred Wilson (AVC)",
+        "url": "https://avc.com/feed/",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 3,
+    },
+    {
+        "name": "Morgan Housel (Collaborative Fund)",
+        "url": "https://collabfund.com/blog/feed/",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 3,
+    },
+    {
+        "name": "Mark Suster (Upfront Ventures)",
+        "url": "https://bothsidesofthetable.com/feed",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 3,
+    },
+    {
+        "name": "Altimeter Capital",
+        "url": "https://altimeter.com/feed",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 3,
+    },
+    {
+        "name": "Fundsmith (Terry Smith)",
+        "url": "https://www.fundsmith.co.uk/rss",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 2,
+    },
+    {
+        "name": "David Sacks",
+        "url": "https://davidsacks.substack.com/feed",
+        "lang": "en",
+        "platform": "Memo",
         "priority": 2,
     },
     # ── China Investment ──────────────────────────────────────────────────────
@@ -112,48 +208,54 @@ SOURCES = [
         "lang": "zh",
         "priority": 2,
     },
-    # ── Legendary Investor Memos / Newsletters ────────────────────────────────
-    {
-        "name": "Howard Marks (Oaktree)",
-        "url": "https://www.oaktreecapital.com/insights/memos/rss",
-        "lang": "en",
-        "priority": 3,
-    },
-    {
-        "name": "Fundsmith (Terry Smith)",
-        "url": "https://www.fundsmith.co.uk/rss",
-        "lang": "en",
-        "priority": 3,
-    },
-    {
-        "name": "Altimeter Capital",
-        "url": "https://altimeter.com/feed",
-        "lang": "en",
-        "priority": 3,
-    },
     # ── Investment Podcasts ───────────────────────────────────────────────────
     {
         "name": "Invest Like the Best",
         "url": "https://feeds.megaphone.fm/investlikethebest",
         "lang": "en",
+        "platform": "Podcast",
+        "priority": 3,
+    },
+    {
+        "name": "Acquired",
+        "url": "https://feeds.simplecast.com/6khJWNb1",
+        "lang": "en",
+        "platform": "Podcast",
+        "priority": 3,
+    },
+    {
+        "name": "20VC (Harry Stebbings)",
+        "url": "https://20vc.libsyn.com/rss",
+        "lang": "en",
+        "platform": "Podcast",
         "priority": 3,
     },
     {
         "name": "All-In Podcast",
         "url": "https://feeds.megaphone.fm/all-in-with-chamath-jason-sacks-friedberg",
         "lang": "en",
+        "platform": "Podcast",
+        "priority": 3,
+    },
+    {
+        "name": "Founders Podcast",
+        "url": "https://feeds.transistor.fm/founders-podcast",
+        "lang": "en",
+        "platform": "Podcast",
         "priority": 3,
     },
     {
         "name": "We Study Billionaires",
         "url": "https://feeds.megaphone.fm/WSB",
         "lang": "en",
+        "platform": "Podcast",
         "priority": 2,
     },
     {
         "name": "Capital Allocators",
         "url": "https://feeds.megaphone.fm/capital-allocators",
         "lang": "en",
+        "platform": "Podcast",
         "priority": 2,
     },
 ]
@@ -200,6 +302,7 @@ TIME_WINDOW_HOURS = 24
 
 # ── 上限与评分参数 ────────────────────────────────────────────────────────────
 MAX_ARTICLES = 25
+INSIGHT_MIN_RATIO = 0.20   # Blog/Memo/Podcast 最少占总数的 20%
 ENRICH_MIN_SCORE = 8
 ENRICH_MAX_COUNT = 10
 
