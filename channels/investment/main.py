@@ -16,7 +16,7 @@ from fetcher  import fetch_all
 from enricher import enrich_articles
 from renderer import render
 from mailer   import send_digest
-from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT, INSIGHT_MIN_RATIO
+from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT, INSIGHT_MIN_RATIO, SOURCE_CAPS
 
 from common.dedup     import deduplicate
 from common.scorer    import score_articles, get_usage
@@ -24,6 +24,21 @@ from common.reporter  import report_to_gateway
 
 
 _INSIGHT_PLATFORMS = {"Blog", "Memo", "Podcast"}
+
+
+def _apply_source_caps(articles: list[dict], caps: dict[str, int]) -> list[dict]:
+    """按来源限制文章数量，每个来源只保留分数最高的 N 篇。"""
+    counts: dict[str, int] = {}
+    result = []
+    for a in articles:  # articles 已按分数降序排列
+        source = a.get("source", "")
+        cap = caps.get(source)
+        if cap is not None:
+            counts[source] = counts.get(source, 0) + 1
+            if counts[source] > cap:
+                continue
+        result.append(a)
+    return result
 
 
 def _apply_insight_quota(
@@ -82,6 +97,7 @@ def main():
         report_to_gateway(usage_info, project="digest-hub/investment")
 
     articles.sort(key=lambda a: -a["score"])
+    articles = _apply_source_caps(articles, SOURCE_CAPS)
     articles = _apply_insight_quota(articles, MAX_ARTICLES, INSIGHT_MIN_RATIO)
 
     if not args.no_score:

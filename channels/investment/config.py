@@ -92,36 +92,15 @@ SOURCES = [
         "priority": 2,
     },
     {
-        "name": "Greylock",
-        "url": "https://greylock.com/greymatter/feed/",
-        "lang": "en",
-        "platform": "Blog",
-        "priority": 3,
-    },
-    {
-        "name": "NFX Essays",
-        "url": "https://www.nfx.com/feed",
-        "lang": "en",
-        "platform": "Blog",
-        "priority": 3,
-    },
-    {
         "name": "USV (Union Square Ventures)",
-        "url": "https://www.usv.com/blog.rss",
+        "url": "https://www.usv.com/writing/feed/",
         "lang": "en",
         "platform": "Blog",
         "priority": 3,
     },
     {
         "name": "Lux Capital",
-        "url": "https://luxcapital.com/feeds/blog/",
-        "lang": "en",
-        "platform": "Blog",
-        "priority": 2,
-    },
-    {
-        "name": "Index Ventures",
-        "url": "https://www.indexventures.com/perspectives/rss",
+        "url": "https://luxcapital.substack.com/feed",
         "lang": "en",
         "platform": "Blog",
         "priority": 2,
@@ -150,7 +129,14 @@ SOURCES = [
     },
     {
         "name": "Morgan Housel (Collaborative Fund)",
-        "url": "https://collabfund.com/blog/feed/",
+        "url": "https://collabfund.com/feed",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 3,
+    },
+    {
+        "name": "Morgan Housel (Substack)",
+        "url": "https://morganhousel.substack.com/feed",
         "lang": "en",
         "platform": "Memo",
         "priority": 3,
@@ -161,20 +147,6 @@ SOURCES = [
         "lang": "en",
         "platform": "Memo",
         "priority": 3,
-    },
-    {
-        "name": "Altimeter Capital",
-        "url": "https://altimeter.com/feed",
-        "lang": "en",
-        "platform": "Memo",
-        "priority": 3,
-    },
-    {
-        "name": "Fundsmith (Terry Smith)",
-        "url": "https://www.fundsmith.co.uk/rss",
-        "lang": "en",
-        "platform": "Memo",
-        "priority": 2,
     },
     {
         "name": "David Sacks",
@@ -305,6 +277,7 @@ INSIGHT_WINDOW_DAYS = 14
 # ── 上限与评分参数 ────────────────────────────────────────────────────────────
 MAX_ARTICLES = 25
 INSIGHT_MIN_RATIO = 0.20   # Blog/Memo/Podcast 最少占总数的 20%
+SOURCE_CAPS = {"36氪": 2}  # 每个来源的最大文章数（按分数保留最高的）
 ENRICH_MIN_SCORE = 8
 ENRICH_MAX_COUNT = 10
 
