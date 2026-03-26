@@ -6,3 +6,4 @@ output/
 *.html
 logs/
 .DS_Store
+.gstack/

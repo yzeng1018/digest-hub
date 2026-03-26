@@ -83,6 +83,17 @@ def _make_article(*, title, summary, url, source, platform, lang, pub) -> dict:
     }
 
 
+def _nitter_to_twitter(url: str) -> str:
+    """将 Nitter 实例 URL 转换为 x.com URL。"""
+    if not url:
+        return url
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.netloc in ("twitter.com", "x.com", "www.twitter.com", "www.x.com"):
+        return url
+    return f"https://x.com{parsed.path}"
+
+
 def _parse_feed(feed_url: str, source_name: str, platform: str, lang: str,
                 cutoff: datetime, max_items: int = 999) -> list[dict]:
     """通用 RSS 解析器，返回 cutoff 之后的文章。"""
@@ -111,6 +122,8 @@ def _parse_feed(feed_url: str, source_name: str, platform: str, lang: str,
             or getattr(entry, "description", "")
         )
         url = getattr(entry, "link", "")
+        if platform == "X":
+            url = _nitter_to_twitter(url)
         articles.append(_make_article(
             title=title, summary=summary, url=url,
             source=source_name, platform=platform, lang=lang, pub=pub,

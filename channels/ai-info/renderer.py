@@ -9,23 +9,23 @@ from config import SCORE_MUST_READ, SCORE_IMPORTANT
 
 CSS = """
 :root {
-  --bg: #0d1117;
-  --surface: #161b22;
-  --surface2: #1e2432;
-  --border: #272e3d;
-  --text: #e6edf3;
-  --text-muted: #7d8590;
-  --accent: #58a6ff;
-  --must-read: #f85149;
-  --important: #e3b341;
-  --normal: #3fb950;
-  --tag-bg: #1e2432;
-  --zh-tag: #1b3a2d;
-  --en-tag: #1b2a3d;
-  --x-tag: #1a1a2e;
-  --jike-tag: #2a1f35;
-  --blog-tag: #1a2e2e;
-  --podcast-tag: #2a1a1a;
+  --bg: #f6f8fa;
+  --surface: #ffffff;
+  --surface2: #f0f2f5;
+  --border: #d0d7de;
+  --text: #1a1a2e;
+  --text-muted: #57606a;
+  --accent: #0969da;
+  --must-read: #cf222e;
+  --important: #9a6700;
+  --normal: #1a7f37;
+  --tag-bg: #f0f2f5;
+  --zh-tag: #dafbe1;
+  --en-tag: #ddf4ff;
+  --x-tag: #f0f0f0;
+  --jike-tag: #f3e8ff;
+  --blog-tag: #d1fae5;
+  --podcast-tag: #fff0e6;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -39,7 +39,7 @@ a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 .header {
-  background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+  background: #ffffff;
   border-bottom: 1px solid var(--border);
   padding: 32px 40px 24px;
   position: sticky;
@@ -160,25 +160,25 @@ a:hover { text-decoration: underline; }
   padding: 2px 7px;
 }
 .tag-source  { background: var(--tag-bg); color: var(--text-muted); border: 1px solid var(--border); }
-.tag-zh      { background: var(--zh-tag); color: #56d364; }
-.tag-en      { background: var(--en-tag); color: #79c0ff; }
-.tag-x       { background: var(--x-tag);       color: #e0e0e0; }
-.tag-jike    { background: var(--jike-tag);   color: #c084fc; }
-.tag-blog    { background: var(--blog-tag);   color: #34d399; }
-.tag-podcast { background: var(--podcast-tag); color: #fb923c; }
+.tag-zh      { background: var(--zh-tag); color: #1a7f37; }
+.tag-en      { background: var(--en-tag); color: #0969da; }
+.tag-x       { background: var(--x-tag);       color: #444444; }
+.tag-jike    { background: var(--jike-tag);   color: #7c3aed; }
+.tag-blog    { background: var(--blog-tag);   color: #047857; }
+.tag-podcast { background: var(--podcast-tag); color: #c2410c; }
 
 .card-summary { font-size: 14px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.65; }
 
 .card-background {
-  font-size: 12px; color: #79c0ff;
-  background: rgba(121,192,255,0.07);
+  font-size: 12px; color: #0969da;
+  background: #ddf4ff;
   border-radius: 6px; padding: 6px 10px;
   margin-bottom: 8px; line-height: 1.6;
 }
 .card-reason {
   display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: #56d364;
-  background: rgba(86,211,100,0.07);
+  font-size: 12px; color: #1a7f37;
+  background: #dafbe1;
   border-radius: 6px; padding: 6px 10px;
   margin-bottom: 10px;
 }
