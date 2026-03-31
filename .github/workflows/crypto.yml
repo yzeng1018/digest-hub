@@ -1,0 +1,31 @@
+name: 加密情报 Daily Digest
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # 北京时间 08:00（UTC 00:00）
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: channels/crypto/package-lock.json
+
+      - name: 安装依赖
+        run: npm install --prefix channels/crypto
+
+      - name: 运行加密情报 digest
+        env:
+          QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
+          GATEWAY_URL:        https://gateway.asksidra.com/v1
+          GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
+        run: node channels/crypto/main.js

@@ -1,0 +1,16 @@
+{
+  "name": "crypto",
+  "version": "1.0.0",
+  "description": "Daily crypto digest — Twitter KOLs + Blogs",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "node main.js --no-email",
+    "dry": "node main.js --no-email --no-score"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.16",
+    "openai": "^4.87.0",
+    "rss-parser": "^3.13.0"
+  }
+}

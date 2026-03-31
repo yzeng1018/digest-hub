@@ -7,3 +7,4 @@ output/
 logs/
 .DS_Store
 .gstack/
+node_modules/

@@ -1,0 +1,125 @@
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import OpenAI from 'openai';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SYSTEM_PROMPT = readFileSync(join(__dirname, '../prompts/score.md'), 'utf8');
+
+const GATEWAY_URL     = process.env.GATEWAY_URL     || 'http://localhost:8000/v1';
+const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || 'dummy';
+const QWEN_API_KEY    = process.env.QWEN_API_KEY    || '';
+const ZHIPU_API_KEY   = process.env.ZHIPU_API_KEY   || '';
+
+export const tokenUsage = { model: '', prompt: 0, completion: 0, total: 0 };
+
+function makeClient(baseURL, apiKey) {
+  return new OpenAI({ baseURL, apiKey });
+}
+
+async function callAI(messages) {
+  // 1. Gateway
+  try {
+    const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
+    const r = await c.chat.completions.create({ model: 'auto', messages, max_tokens: 4096 });
+    return { response: r, backend: 'gateway' };
+  } catch (e) {
+    console.log(`  [gateway] 不可用 (${e.message?.slice(0, 50)})，切换 Qwen…`);
+  }
+
+  // 2. Qwen direct
+  if (QWEN_API_KEY) {
+    try {
+      const c = makeClient('https://dashscope.aliyuncs.com/compatible-mode/v1', QWEN_API_KEY);
+      const r = await c.chat.completions.create({ model: 'qwen-max', messages, max_tokens: 4096 });
+      return { response: r, backend: 'qwen' };
+    } catch (e) {
+      console.log(`  [qwen] 失败 (${e.message?.slice(0, 50)})，切换 GLM…`);
+    }
+  }
+
+  // 3. GLM fallback
+  if (!ZHIPU_API_KEY) throw new Error('所有 AI provider 均失败，ZHIPU_API_KEY 未配置');
+  const c = makeClient('https://open.bigmodel.cn/api/paas/v4', ZHIPU_API_KEY);
+  const r = await c.chat.completions.create({ model: 'glm-4-flash', messages, max_tokens: 4096 });
+  return { response: r, backend: 'glm' };
+}
+
+function parseResult(text) {
+  const clean = text.replace(/```(?:json)?/g, '').trim();
+  const m = clean.match(/\[[\s\S]*\]/);
+  if (!m) return [];
+  try { return JSON.parse(m[0]); } catch { return []; }
+}
+
+export async function scoreArticles(articles, batchSize = 10) {
+  if (!QWEN_API_KEY && !GATEWAY_URL) {
+    console.log('[WARN] 无 AI key，跳过评分');
+    articles.forEach(a => { a.score = 5; a.reason_zh = ''; a.title_zh = a.title; a.summary_zh = a.summary || ''; });
+    return articles;
+  }
+
+  const USER_TEMPLATE = (count, json) =>
+    `请对以下 ${count} 条内容进行评估。\n\n严格按照以下 JSON 格式返回，不要有任何其他文字，不要有 markdown 代码块：\n[\n  {\n    "id": "序号，从0开始",\n    "score": 评分数字(1-10),\n    "reason_zh": "一句话说明价值（20字以内）",\n    "title_zh": "中文标题",\n    "summary_zh": "中文摘要2-3句"\n  }\n]\n\n内容列表：\n${json}`;
+
+  for (let start = 0; start < articles.length; start += batchSize) {
+    const batch = articles.slice(start, start + batchSize);
+    console.log(`  评分 [${start + 1}–${start + batch.length}]…`);
+
+    const items = batch.map((a, i) => ({
+      id: String(i),
+      platform: a.platform,
+      source: a.source,
+      lang: a.lang,
+      title: a.title,
+      summary: (a.summary || '').slice(0, 300),
+    }));
+
+    try {
+      const { response, backend } = await callAI([
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: USER_TEMPLATE(batch.length, JSON.stringify(items, null, 2)) },
+      ]);
+
+      if (response.usage) {
+        tokenUsage.prompt     += response.usage.prompt_tokens     || 0;
+        tokenUsage.completion += response.usage.completion_tokens || 0;
+        tokenUsage.total      += response.usage.total_tokens      || 0;
+        if (!tokenUsage.model) tokenUsage.model = response.model || `${backend}/auto`;
+      }
+
+      const results = parseResult(response.choices[0].message.content || '');
+      const byId = Object.fromEntries(results.map(r => [r.id, r]));
+
+      batch.forEach((art, i) => {
+        const r = byId[String(i)];
+        art.score      = r ? Math.min(10, Math.max(1, Number(r.score) || 5)) : 5;
+        art.reason_zh  = r?.reason_zh  || '';
+        art.title_zh   = r?.title_zh   || art.title;
+        art.summary_zh = r?.summary_zh || art.summary || '';
+      });
+    } catch (err) {
+      console.log(`  [ERROR] 评分批次失败: ${err.message}`);
+      batch.forEach(art => {
+        art.score = 5; art.reason_zh = ''; art.title_zh = art.title; art.summary_zh = art.summary || '';
+      });
+    }
+  }
+
+  return articles;
+}
+
+export async function reportUsage(project = 'digest-hub/crypto') {
+  if (!tokenUsage.total) return;
+  try {
+    const res = await fetch(`${GATEWAY_URL.replace('/v1', '')}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GATEWAY_API_KEY}` },
+      body: JSON.stringify({ project, ...tokenUsage }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) console.log(`  [token-mgmt] 已上报 ${tokenUsage.total.toLocaleString()} tokens`);
+  } catch {
+    // non-fatal
+  }
+}
