@@ -32,7 +32,7 @@ def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
     try:
         c = OpenAI(api_key=GATEWAY_API_KEY, base_url=GATEWAY_URL,
                    http_client=httpx.Client(trust_env=False))
-        return c.chat.completions.create(model="auto", messages=messages, **kwargs)
+        return c.chat.completions.create(model="free", messages=messages, **kwargs)
     except Exception:
         pass
 
@@ -137,15 +137,6 @@ def _enrich_one(art: dict) -> None:
 
 
 def enrich_articles(articles: list[dict]) -> list[dict]:
-    api_key = os.environ.get("QWEN_API_KEY")
-    if not api_key:
-        print("[WARN] QWEN_API_KEY not set – skipping enrichment.")
-        for art in articles:
-            art.setdefault("background_zh", "")
-            art.setdefault("key_players_zh", "")
-            art.setdefault("data_point_zh", "")
-        return articles
-
     targets = [a for a in articles if a.get("score", 0) >= ENRICH_MIN_SCORE][:ENRICH_MAX_COUNT]
 
     if not targets:

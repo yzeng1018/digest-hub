@@ -45,6 +45,11 @@ async function callAI(messages) {
   return { response: r, backend: 'glm' };
 }
 
+function summaryFor(art) {
+  if (art.platform === 'Podcast' && art.transcript) return art.transcript.slice(0, 2000);
+  return (art.summary || '').slice(0, 300);
+}
+
 function parseResult(text) {
   const clean = text.replace(/```(?:json)?/g, '').trim();
   const m = clean.match(/\[[\s\S]*\]/);
@@ -72,7 +77,7 @@ export async function scoreArticles(articles, batchSize = 10) {
       source: a.source,
       lang: a.lang,
       title: a.title,
-      summary: (a.summary || '').slice(0, 300),
+      summary: summaryFor(a),
     }));
 
     try {
@@ -109,7 +114,7 @@ export async function scoreArticles(articles, batchSize = 10) {
   return articles;
 }
 
-export async function reportUsage(project = 'digest-hub/crypto') {
+export async function reportUsage(project = 'digest-hub/ai-info') {
   if (!tokenUsage.total) return;
   try {
     const res = await fetch(`${GATEWAY_URL.replace('/v1', '')}/report`, {

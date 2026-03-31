@@ -12,14 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: channels/ai-info/requirements.txt
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: channels/ai-info/package-lock.json
 
       - name: 安装依赖
-        run: pip install -r channels/ai-info/requirements.txt
+        run: npm install --prefix channels/ai-info
 
       - name: 运行 AI情报 digest
         env:
@@ -27,4 +27,5 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
           GATEWAY_URL:        https://gateway.asksidra.com/v1
-        run: python channels/ai-info/main.py
+          GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
+        run: node channels/ai-info/main.js

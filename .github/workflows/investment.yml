@@ -24,6 +24,8 @@ jobs:
       - name: 运行投资情报 digest
         env:
           QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
+          GATEWAY_URL:        https://gateway.asksidra.com/v1
+          GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
         run: python channels/investment/main.py

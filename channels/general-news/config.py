@@ -117,7 +117,10 @@ SOURCES = [
 ]
 
 # How many top HN stories to fetch
-HN_TOP_COUNT = 20
+HN_TOP_COUNT = 10
+
+# Max HN articles allowed in the final digest (after scoring)
+HN_MAX_IN_DIGEST = 5
 
 # How many hours back to include articles (older ones are discarded)
 TIME_WINDOW_HOURS = 24

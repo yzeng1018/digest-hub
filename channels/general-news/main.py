@@ -16,7 +16,7 @@ from fetcher  import fetch_all
 from enricher import enrich_articles
 from renderer import render
 from mailer   import send_digest
-from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT
+from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT, HN_MAX_IN_DIGEST
 
 from common.dedup     import deduplicate
 from common.scorer    import score_articles, get_usage
@@ -54,7 +54,17 @@ def main():
         report_to_gateway(usage_info, project="digest-hub/general-news")
 
     articles.sort(key=lambda a: -a["score"])
-    articles = articles[:MAX_ARTICLES]
+
+    # Cap HN articles to avoid them dominating the digest
+    hn_seen = 0
+    capped = []
+    for art in articles:
+        if art.get("source") == "Hacker News":
+            if hn_seen >= HN_MAX_IN_DIGEST:
+                continue
+            hn_seen += 1
+        capped.append(art)
+    articles = capped[:MAX_ARTICLES]
 
     if not args.no_score:
         articles = enrich_articles(articles)

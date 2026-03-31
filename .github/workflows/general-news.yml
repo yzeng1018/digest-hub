@@ -27,4 +27,5 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
           GATEWAY_URL:        https://gateway.asksidra.com/v1
+          GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
         run: python channels/general-news/main.py

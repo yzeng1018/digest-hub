@@ -43,7 +43,7 @@ def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
             base_url=GATEWAY_URL,
             http_client=httpx.Client(trust_env=False),
         )
-        resp = c.chat.completions.create(model="auto", messages=messages, **kwargs)
+        resp = c.chat.completions.create(model="free", messages=messages, **kwargs)
         return resp, "gateway"
     except Exception as e:
         print(f"  [gateway] 不可用 ({type(e).__name__})，切换 DashScope…")
@@ -133,16 +133,6 @@ def score_articles(
 
     if summary_fn is None:
         summary_fn = _default_summary_fn
-
-    api_key = os.environ.get("QWEN_API_KEY")
-    if not api_key:
-        print("[WARN] QWEN_API_KEY not set – skipping scoring.")
-        for art in articles:
-            art["score"] = 5
-            art["reason_zh"] = ""
-            art["title_zh"] = art["title"]
-            art["summary_zh"] = art["summary"]
-        return articles
 
     for batch_start in range(0, len(articles), batch_size):
         batch = articles[batch_start: batch_start + batch_size]
