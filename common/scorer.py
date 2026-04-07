@@ -1,21 +1,19 @@
 """
-通用 Qwen 评分模块。
+通用评分模块。
 system_prompt、batch_size、summary_fn 由各 channel 的 config 传入，
 使同一套 API 调用逻辑可服务于不同视角的评分需求。
 """
 
 import json
+import math
 import os
 import re
 from collections.abc import Callable
 
 import httpx
-import openai as _openai
 from openai import OpenAI
 
-QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-QWEN_MODEL    = "qwen-max"
-GATEWAY_URL   = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
+GATEWAY_URL     = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
 GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
 
 # GLM 兜底（glm-4-flash 永久免费）
@@ -25,16 +23,66 @@ GLM_MODEL    = "glm-4-flash"
 # 模块级 usage 累计器，每次 score_articles 调用前重置
 _usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
+# 模块级 metrics 累计器
+_metrics: dict = {
+    "batches_total":   0,
+    "batches_parsed":  0,  # JSON 解析成功的批次数
+}
+
 
 def get_usage() -> dict:
     """返回最近一次 score_articles 调用的 token 消耗统计。"""
     return dict(_usage)
 
 
-def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
+def get_metrics(articles: list[dict]) -> dict:
     """
-    三级 fallback 链：本地网关 → DashScope 直连 → GLM-4-Flash。
+    根据已完成评分的文章列表，计算模型表现指标。
+    需在 score_articles 调用结束后调用。
+
+    返回：
+      parse_rate       — JSON 解析成功率 0-1
+      score_spread     — 评分标准差（区分度，目标 ~2.0）
+      translation_rate — 有 title_zh 的文章比例
+      perf_score       — 综合得分 0-10
+        计算公式：parse_rate×4 + min(score_spread/3,1)×3 + translation_rate×3
+    """
+    total   = _metrics["batches_total"]
+    parsed  = _metrics["batches_parsed"]
+    parse_rate = (parsed / total) if total > 0 else 0.0
+
+    scores = [a.get("score", 0) for a in articles if a.get("score", 0) > 0]
+    if len(scores) >= 2:
+        mean = sum(scores) / len(scores)
+        variance = sum((s - mean) ** 2 for s in scores) / len(scores)
+        score_spread = math.sqrt(variance)
+    else:
+        score_spread = 0.0
+
+    translated = sum(1 for a in articles if a.get("title_zh") and a["title_zh"] != a.get("title"))
+    translation_rate = (translated / len(articles)) if articles else 0.0
+
+    perf_score = round(
+        parse_rate * 4.0
+        + min(score_spread / 3.0, 1.0) * 3.0
+        + translation_rate * 3.0,
+        2,
+    )
+
+    return {
+        "parse_rate":       round(parse_rate, 3),
+        "score_spread":     round(score_spread, 2),
+        "translation_rate": round(translation_rate, 3),
+        "perf_score":       perf_score,
+        "article_count":    len(articles),
+    }
+
+
+def _complete(messages: list, **kwargs):
+    """
+    两级 fallback 链：本地网关(free tier) → GLM-4-Flash 直连。
     本地网关请求强制绕过系统代理（trust_env=False），避免 http_proxy 拦截 localhost。
+    不走任何付费直连路径——付费路由交由网关的 routing.yaml 统一管理。
     """
     # 1. 本地网关（绕过系统代理）
     try:
@@ -46,22 +94,12 @@ def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
         resp = c.chat.completions.create(model="free", messages=messages, **kwargs)
         return resp, "gateway"
     except Exception as e:
-        print(f"  [gateway] 不可用 ({type(e).__name__})，切换 DashScope…")
+        print(f"  [gateway] 不可用 ({type(e).__name__})，切换 GLM 兜底…")
 
-    # 2. DashScope 直连
-    try:
-        api_key = os.environ.get("QWEN_API_KEY") or os.environ.get("DASHSCOPE_API_KEY", "")
-        if api_key:
-            c = OpenAI(api_key=api_key, base_url=QWEN_BASE_URL)
-            resp = c.chat.completions.create(model=model, messages=messages, **kwargs)
-            return resp, "dashscope"
-    except Exception as e:
-        print(f"  [dashscope] 失败 ({type(e).__name__}: {e})，切换 GLM…")
-
-    # 3. GLM 兜底
+    # 2. GLM-4-Flash 兜底（永久免费）
     glm_key = os.environ.get("ZHIPU_API_KEY", "")
     if not glm_key:
-        raise RuntimeError("所有 provider 均失败，且未配置 ZHIPU_API_KEY（GLM 兜底不可用）")
+        raise RuntimeError("网关不可用，且未配置 ZHIPU_API_KEY（GLM 兜底不可用）")
     print(f"  [glm] 使用 {GLM_MODEL} 兜底…")
     c = OpenAI(api_key=glm_key, base_url=GLM_BASE_URL)
     resp = c.chat.completions.create(model=GLM_MODEL, messages=messages, **kwargs)
@@ -106,10 +144,10 @@ def _apply_results(articles: list[dict], results: list[dict]) -> None:
     for i, art in enumerate(articles):
         r = index.get(str(i))
         if not r:
-            art.setdefault("score", 3)
-            art.setdefault("reason_zh", "")
-            art.setdefault("title_zh", art["title"])
-            art.setdefault("summary_zh", art["summary"])
+            art["score"] = art.get("score") or 3
+            art["reason_zh"] = art.get("reason_zh") or ""
+            art["title_zh"] = art.get("title_zh") or art["title"]
+            art["summary_zh"] = art.get("summary_zh") or art["summary"]
             continue
         art["score"] = int(r.get("score", 3))
         art["reason_zh"] = r.get("reason_zh", "")
@@ -125,11 +163,12 @@ def score_articles(
 ) -> list[dict]:
     """
     对文章列表评分 + 翻译，修改原列表并返回。
-    summary_fn: 从 article dict 提取送给 Qwen 的摘要文本，默认取 summary[:300]。
-    调用结束后可通过 get_usage() 获取 token 消耗。
+    summary_fn: 从 article dict 提取送给模型的摘要文本，默认取 summary[:300]。
+    调用结束后可通过 get_usage() 获取 token 消耗，get_metrics() 获取模型表现。
     """
-    global _usage
-    _usage = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    global _usage, _metrics
+    _usage   = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    _metrics = {"batches_total": 0, "batches_parsed": 0}
 
     if summary_fn is None:
         summary_fn = _default_summary_fn
@@ -152,6 +191,7 @@ def score_articles(
         payload = json.dumps(items, ensure_ascii=False, indent=2)
         user_msg = USER_PROMPT_TEMPLATE.format(count=len(batch), articles_json=payload)
 
+        _metrics["batches_total"] += 1
         try:
             resp, backend = _complete(
                 messages=[
@@ -166,19 +206,21 @@ def score_articles(
                 _usage["prompt_tokens"]     += resp.usage.prompt_tokens
                 _usage["completion_tokens"] += resp.usage.completion_tokens
                 _usage["total_tokens"]      += resp.usage.total_tokens
-            # 记录实际模型名（优先用响应中的，否则用请求参数）
+            # 记录实际模型名（优先用响应中的）
             if not _usage["model"]:
                 _usage["model"] = getattr(resp, "model", "") or (
-                    "gateway/auto" if backend == "gateway" else QWEN_MODEL
+                    "gateway/free" if backend == "gateway" else GLM_MODEL
                 )
             results = _parse_response(resp.choices[0].message.content or "")
+            if results:
+                _metrics["batches_parsed"] += 1
             _apply_results(batch, results)
         except Exception as exc:
             print(f"  [ERROR] Scoring batch failed: {exc}")
             for art in batch:
-                art.setdefault("score", 3)
-                art.setdefault("reason_zh", "")
-                art.setdefault("title_zh", art["title"])
-                art.setdefault("summary_zh", art["summary"])
+                art["score"] = art.get("score") or 3
+                art["reason_zh"] = art.get("reason_zh") or ""
+                art["title_zh"] = art.get("title_zh") or art["title"]
+                art["summary_zh"] = art.get("summary_zh") or art["summary"]
 
     return articles

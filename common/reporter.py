@@ -47,6 +47,68 @@ def _infer_provider(model: str) -> str:
     return "qwen"
 
 
+def _infer_provider_from_model(model: str) -> str:
+    """从模型名推断 provider（宽松匹配）。"""
+    m = model.lower()
+    if "glm" in m:            return "zhipu"
+    if "llama" in m:          return "groq"
+    if "ernie" in m:          return "baidu"
+    if "qwen" in m:           return "qwen"
+    if "hunyuan" in m:        return "hunyuan"
+    if "gemma" in m:          return "openrouter"
+    if "moonshot" in m:       return "kimi"
+    return "unknown"
+
+
+def report_model_score(
+    usage_info: dict,
+    metrics: dict,
+    project: str,
+) -> None:
+    """
+    将模型本次运行的表现指标上报至 token-management 网关。
+
+    usage_info: get_usage() 返回值，含 model 字段
+    metrics:    get_metrics(articles) 返回值，含 parse_rate / score_spread 等
+    project:    channel 名称，例如 "digest-hub/general-news"
+    """
+    if not usage_info or not metrics:
+        return
+    model = usage_info.get("model") or ""
+    if not model:
+        return
+
+    payload = {
+        "model":            model,
+        "provider":         _infer_provider_from_model(model),
+        "project":          project,
+        "parse_rate":       metrics.get("parse_rate", 0.0),
+        "score_spread":     metrics.get("score_spread", 0.0),
+        "translation_rate": metrics.get("translation_rate", 0.0),
+        "perf_score":       metrics.get("perf_score", 0.0),
+        "article_count":    metrics.get("article_count", 0),
+    }
+
+    url  = GATEWAY_URL.rstrip("/").removesuffix("/v1") + "/api/models/run-score"
+    data = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    if GATEWAY_API_KEY:
+        headers["Authorization"] = f"Bearer {GATEWAY_API_KEY}"
+
+    no_proxy_handler = urllib.request.ProxyHandler({})
+    opener = urllib.request.build_opener(no_proxy_handler)
+
+    try:
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        with opener.open(req, timeout=5) as resp:
+            result = json.loads(resp.read())
+            print(f"  [token-mgmt] 模型评分已上报 {model} → perf_score {result.get('perf_score')}")
+    except urllib.error.URLError as e:
+        print(f"  [token-mgmt] 模型评分上报失败: {e.reason}")
+    except Exception as e:
+        print(f"  [token-mgmt] 模型评分上报失败: {e}")
+
+
 def report_to_gateway(usage_info: dict, project: str) -> None:
     """
     将一次 scorer 调用的 token 消耗上报至 token-management 网关。

@@ -16,24 +16,20 @@ import re
 import time
 
 import httpx
-import openai as _openai
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
 
 from config import ENRICH_MIN_SCORE, ENRICH_MAX_COUNT
 
-QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-QWEN_MODEL = "qwen-plus"   # cheaper model fine for enrichment
-GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
+GATEWAY_URL     = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
 GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
+GLM_BASE_URL    = "https://open.bigmodel.cn/api/paas/v4"
+GLM_MODEL       = "glm-4-flash"
 
-GLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
-GLM_MODEL    = "glm-4-flash"
 
-
-def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
-    """三级 fallback：本地网关（绕过代理）→ DashScope 直连 → GLM-4-Flash。"""
+def _complete(messages: list, **kwargs):
+    """两级 fallback：本地网关(free tier) → GLM-4-Flash 直连。不走付费直连路径。"""
     # 1. 本地网关（强制绕过系统代理）
     try:
         c = OpenAI(
@@ -45,19 +41,10 @@ def _complete(messages: list, model: str = QWEN_MODEL, **kwargs):
     except Exception:
         pass
 
-    # 2. DashScope 直连
-    try:
-        api_key = os.environ.get("QWEN_API_KEY") or os.environ.get("DASHSCOPE_API_KEY", "")
-        if api_key:
-            c = OpenAI(api_key=api_key, base_url=QWEN_BASE_URL)
-            return c.chat.completions.create(model=model, messages=messages, **kwargs)
-    except Exception:
-        pass
-
-    # 3. GLM 兜底
+    # 2. GLM-4-Flash 兜底（永久免费）
     glm_key = os.environ.get("ZHIPU_API_KEY", "")
     if not glm_key:
-        raise RuntimeError("所有 provider 均失败，且未配置 ZHIPU_API_KEY")
+        raise RuntimeError("网关不可用，且未配置 ZHIPU_API_KEY（GLM 兜底不可用）")
     c = OpenAI(api_key=glm_key, base_url=GLM_BASE_URL)
     return c.chat.completions.create(model=GLM_MODEL, messages=messages, **kwargs)
 

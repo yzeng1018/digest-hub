@@ -19,8 +19,8 @@ from mailer   import send_digest
 from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT, INSIGHT_MIN_RATIO, SOURCE_CAPS
 
 from common.dedup     import deduplicate
-from common.scorer    import score_articles, get_usage
-from common.reporter  import report_to_gateway
+from common.scorer    import score_articles, get_usage, get_metrics
+from common.reporter  import report_to_gateway, report_model_score
 
 
 _INSIGHT_PLATFORMS = {"Blog", "Memo", "Podcast"}
@@ -89,12 +89,15 @@ def main():
             art["data_point_zh"]  = ""
             art["title_zh"]       = art["title"]
             art["summary_zh"]     = art["summary"]
-        usage_info = {}
+        usage_info    = {}
+        model_metrics = {}
     else:
-        print(f"Scoring {len(articles)} articles with Qwen…")
+        print(f"Scoring {len(articles)} articles…")
         articles = score_articles(articles, SCORING_SYSTEM_PROMPT, batch_size=20)
-        usage_info = get_usage()
+        usage_info    = get_usage()
+        model_metrics = get_metrics(articles)
         report_to_gateway(usage_info, project="digest-hub/investment")
+        report_model_score(usage_info, model_metrics, project="digest-hub/investment")
 
     articles.sort(key=lambda a: -a["score"])
     articles = _apply_source_caps(articles, SOURCE_CAPS)
@@ -115,7 +118,7 @@ def main():
     render(articles, output_path)
 
     if not args.no_email:
-        send_digest(articles, usage_info=usage_info)
+        send_digest(articles, usage_info=usage_info, model_metrics=model_metrics)
 
     must_reads = sum(1 for a in articles if a["score"] >= 8)
     print(f"\n完成。共 {len(articles)} 条 · 必读 {must_reads} 条")
