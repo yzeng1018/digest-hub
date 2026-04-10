@@ -30,9 +30,9 @@ from datetime import timezone
 
 
 # 周报专属配置
-WEEKLY_TIME_WINDOW_HOURS = 168   # 7天
+WEEKLY_TIME_WINDOW_HOURS = 192   # 8天（多抓一天，防周末信息源更新延迟）
 WEEKLY_MAX_ARTICLES      = 8     # 严选：最多8篇，宁缺毋滥
-WEEKLY_MIN_SCORE         = 7     # 7分以下不进周报
+WEEKLY_MIN_SCORE         = 6     # 6分以下不进周报
 WEEKLY_ENRICH_ALL        = True  # 所有入选文章都做深度分析
 
 

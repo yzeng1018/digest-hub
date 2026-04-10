@@ -107,6 +107,93 @@ SOURCES = [
         "category": "product",
         "priority": 2,
     },
+    # ── Substack 产品/增长 Newsletter ─────────────────────────────────────────
+    {
+        "name": "Lenny's Newsletter",
+        "url": "https://www.lennysnewsletter.com/feed",
+        "lang": "en",
+        "category": "product",
+        "priority": 3,
+    },
+    {
+        "name": "Reforge Blog",
+        "url": "https://www.reforge.com/blog/rss.xml",
+        "lang": "en",
+        "category": "product",
+        "priority": 3,
+    },
+    {
+        "name": "First Round Review",
+        "url": "https://review.firstround.com/feed.xml",
+        "lang": "en",
+        "category": "product",
+        "priority": 3,
+    },
+    {
+        "name": "Mind the Product",
+        "url": "https://www.mindtheproduct.com/feed/",
+        "lang": "en",
+        "category": "product",
+        "priority": 2,
+    },
+    {
+        "name": "Stratechery",
+        "url": "https://stratechery.com/feed/",
+        "lang": "en",
+        "category": "product",
+        "priority": 3,
+    },
+    {
+        "name": "Andrew Chen Blog",
+        "url": "https://andrewchen.com/feed/",
+        "lang": "en",
+        "category": "product",
+        "priority": 3,
+    },
+    {
+        "name": "Elezea",
+        "url": "https://elezea.com/feed/",
+        "lang": "en",
+        "category": "ux",
+        "priority": 2,
+    },
+    # ── Podcast 文字稿/Show Notes ──────────────────────────────────────────────
+    {
+        "name": "Lenny's Podcast",
+        "url": "https://feeds.transistor.fm/lenny-s-podcast-product-growth-career",
+        "lang": "en",
+        "category": "product",
+        "priority": 3,
+    },
+    {
+        "name": "Masters of Scale",
+        "url": "https://mastersofscale.com/feed/podcast/",
+        "lang": "en",
+        "category": "product",
+        "priority": 2,
+    },
+    {
+        "name": "This is Product Management",
+        "url": "https://feeds.buzzsprout.com/489175.rss",
+        "lang": "en",
+        "category": "product",
+        "priority": 2,
+    },
+    # ── YouTube 频道（RSS） ────────────────────────────────────────────────────
+    {
+        "name": "Y Combinator",
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCcefcZRL2oaA_uBNeo5UOWg",
+        "lang": "en",
+        "category": "product",
+        "priority": 2,
+    },
+    {
+        "name": "a16z",
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC9cn0TuPq4dnbTY-CBsm3XA",
+        "lang": "en",
+        "category": "product",
+        "priority": 2,
+    },
     # ── 中文产品媒体 ───────────────────────────────────────────────────────────
     {
         "name": "少数派",
@@ -121,6 +208,13 @@ SOURCES = [
         "lang": "zh",
         "category": "product",
         "priority": 2,
+    },
+    {
+        "name": "晚点LatePost",
+        "url": "https://latepost.com/rss.xml",
+        "lang": "zh",
+        "category": "product",
+        "priority": 3,
     },
 ]
 
