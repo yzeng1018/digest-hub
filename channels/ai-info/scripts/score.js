@@ -34,7 +34,7 @@ function parseResult(text) {
 }
 
 export async function scoreArticles(articles, batchSize = 10) {
-  if (!QWEN_API_KEY && !GATEWAY_URL) {
+  if (!GATEWAY_URL) {
     console.log('[WARN] 无 AI key，跳过评分');
     articles.forEach(a => { a.score = 5; a.reason_zh = ''; a.title_zh = a.title; a.summary_zh = a.summary || ''; });
     return articles;
