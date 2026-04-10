@@ -81,7 +81,7 @@ def main():
     output_dir.mkdir(exist_ok=True)
     date_str    = datetime.now().strftime("%Y-%m-%d")
     output_path = args.output or str(output_dir / f"{date_str}.html")
-    render(articles, output_path)
+    render(articles, output_path, usage_info=usage_info, model_metrics=model_metrics)
 
     if not args.no_email:
         send_digest(articles, usage_info=usage_info, model_metrics=model_metrics)

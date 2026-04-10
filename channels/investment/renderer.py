@@ -22,7 +22,35 @@ def _score_label(score: int) -> str:
     return "一般"
 
 
-def render(articles: list[dict], output_path: str) -> None:
+def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
+    if not usage_info or not usage_info.get("total_tokens"):
+        return ""
+    model  = usage_info.get("model", "unknown")
+    prompt = usage_info.get("prompt_tokens", 0)
+    comp   = usage_info.get("completion_tokens", 0)
+    total  = usage_info.get("total_tokens", 0)
+
+    perf_html = ""
+    if model_metrics and model_metrics.get("perf_score") is not None:
+        ps    = model_metrics["perf_score"]
+        pr    = int(model_metrics.get("parse_rate", 0) * 100)
+        tr    = int(model_metrics.get("translation_rate", 0) * 100)
+        ss    = model_metrics.get("score_spread", 0)
+        color = "#69db7c" if ps >= 8 else ("#ffa94d" if ps >= 6 else "#ff6b6b")
+        perf_html = (
+            f' &nbsp;·&nbsp; <span style="color:{color};font-weight:700;">评分 {ps}/10</span>'
+            f' (解析率 {pr}% · 翻译率 {tr}% · 区分度 {ss:.1f}σ)'
+        )
+
+    return (
+        f'<div class="usage-bar">'
+        f'🤖 {model} &nbsp;·&nbsp; ↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens'
+        f'{perf_html}'
+        f'</div>'
+    )
+
+
+def render(articles: list[dict], output_path: str, usage_info: dict | None = None, model_metrics: dict | None = None) -> None:
     rows = ""
     for art in articles:
         sc          = art.get("score", 5)
@@ -101,12 +129,15 @@ body{{background:#0d1117;color:#e6edf3;font-family:-apple-system,'PingFang SC','
 .bg-yellow{{background:#1f1a00;color:#e3c000;}}
 .bg-green{{background:#0d2010;color:#56d364;}}
 .bg-purple{{background:#1a0d2e;color:#c084fc;}}
+.usage-bar{{margin-top:10px;padding:5px 14px;background:rgba(255,255,255,0.08);border-radius:20px;
+            font-size:11px;color:rgba(255,255,255,0.7);display:inline-block;}}
 </style>
 </head>
 <body>
 <div class="header">
   <h1>每日 <span>投资</span> 情报</h1>
   <div class="meta">{now_str}</div>
+  {_usage_bar(usage_info or {{}}, model_metrics)}
   <div class="stats">
     <span class="stat" style="background:rgba(248,81,73,0.15);color:#f85149;">🔥 必读 {must_count}</span>
     <span class="stat" style="background:rgba(227,179,65,0.15);color:#e3b341;">⚡ 重要 {imp_count}</span>

@@ -4,8 +4,10 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parseArgs } from 'util';
+import { config as loadEnv } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+loadEnv({ path: join(__dirname, '.env') });
 
 import { fetchTweets }   from './scripts/fetchTweets.js';
 import { fetchJike }     from './scripts/fetchJike.js';
@@ -79,7 +81,7 @@ async function main() {
   console.log(`\nMarkdown 已保存 → ${outputPath}`);
 
   if (!args['no-email']) {
-    await deliver(markdown, articles, dateStr);
+    await deliver(markdown, articles, dateStr, args['no-score'] ? {} : tokenUsage);
   }
 
   const mustReads = articles.filter(a => (a.score || 0) >= cfg.scoreMustRead).length;

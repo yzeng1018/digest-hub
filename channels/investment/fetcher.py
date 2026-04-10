@@ -153,13 +153,15 @@ def _fetch_twitter_handle(kol: dict, live: list[str], cutoff: datetime) -> list[
             title   = _clean(getattr(entry, "title", ""))
             summary = _clean(getattr(entry, "summary", "") or getattr(entry, "description", ""))
             link    = getattr(entry, "link", "")
+            # 将 Nitter 域名替换为 x.com，确保链接直达 Twitter
+            twitter_url = re.sub(r'^https?://[^/]+', 'https://x.com', link) if link else link
             if not title:
                 continue
             articles.append({
                 "id":       link or title,
                 "title":    title,
                 "summary":  summary,
-                "url":      link,
+                "url":      twitter_url,
                 "source":   f"{name} (@{handle})",
                 "platform": "X",
                 "lang":     "en",

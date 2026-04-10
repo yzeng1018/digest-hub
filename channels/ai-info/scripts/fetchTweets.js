@@ -45,11 +45,14 @@ export async function fetchTweets(handles, nitterInstances, config) {
           const pub = item.pubDate ? new Date(item.pubDate).getTime() : 0;
           if (pub && pub < cutoff) continue;
 
+          const twitterUrl = (item.link || '')
+            .replace(/^https?:\/\/[^/]+/, 'https://x.com')
+            || `https://x.com/${handle}`;
           articles.push({
             id: item.link || item.guid || `${handle}-${count}`,
             title,
             summary: item.contentSnippet || item.content || title,
-            url: item.link || `https://x.com/${handle}`,
+            url: twitterUrl,
             source: `${name} (@${handle})`,
             platform: 'X',
             lang: lang || 'en',

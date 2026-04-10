@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-const GMAIL_PASS  = process.env.GMAIL_APP_PASSWORD || '';
+const GMAIL_PASS  = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
 const RECIPIENT   = process.env.DIGEST_RECIPIENT   || 'yzeng1018@gmail.com';
 const SENDER      = 'yzeng1018@gmail.com';
 
@@ -10,7 +10,16 @@ function scoreColor(score) {
   return '#1971c2';
 }
 
-function buildHtml(articles, dateStr) {
+function usageBar(tokenUsage) {
+  if (!tokenUsage || !tokenUsage.total) return '';
+  const model  = tokenUsage.model || 'AI';
+  const prompt = (tokenUsage.prompt || 0).toLocaleString();
+  const comp   = (tokenUsage.completion || 0).toLocaleString();
+  const total  = tokenUsage.total.toLocaleString();
+  return `<div style="margin-top:10px;padding:5px 14px;background:rgba(255,255,255,0.15);border-radius:20px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">🤖 ${model} &nbsp;·&nbsp; ↑ ${prompt} &nbsp;↓ ${comp} &nbsp;共 ${total} tokens</div>`;
+}
+
+function buildHtml(articles, dateStr, tokenUsage = {}) {
   const mustCount = articles.filter(a => a.score >= 9).length;
   const impCount  = articles.filter(a => a.score >= 6 && a.score < 9).length;
 
@@ -62,6 +71,7 @@ function buildHtml(articles, dateStr) {
   <tr><td style="background:linear-gradient(135deg,#228be6,#1971c2);border-radius:12px 12px 0 0;padding:24px 20px;text-align:center;">
     <div style="font-size:20px;font-weight:800;color:#fff;">每日 AI 情报</div>
     <div style="margin-top:4px;font-size:12px;color:rgba(255,255,255,0.8);">${dateStr}</div>
+    ${usageBar(tokenUsage)}
     <div style="margin-top:10px;">
       <span style="display:inline-block;padding:2px 10px;border-radius:20px;background:rgba(255,107,107,0.25);color:#ff6b6b;font-size:12px;font-weight:600;">🔥 必读 ${mustCount}</span>
       <span style="display:inline-block;padding:2px 10px;border-radius:20px;background:rgba(255,169,77,0.25);color:#ffa94d;font-size:12px;font-weight:600;margin-left:8px;">⚡ 重要 ${impCount}</span>
@@ -81,7 +91,7 @@ function buildHtml(articles, dateStr) {
 </body></html>`;
 }
 
-export async function deliver(markdown, articles, dateStr) {
+export async function deliver(markdown, articles, dateStr, tokenUsage = {}) {
   if (!GMAIL_PASS) {
     console.log('[WARN] GMAIL_APP_PASSWORD 未设置，跳过邮件');
     return;
@@ -93,16 +103,17 @@ export async function deliver(markdown, articles, dateStr) {
   const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
   const transporter = nodemailer.createTransport({
     host: smtpHost,
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: { user: SENDER, pass: GMAIL_PASS },
-    connectionTimeout: 20000,
-    greetingTimeout: 20000,
-    tls: { servername: 'smtp.gmail.com' },
+    connectionTimeout: 60000,
+    greetingTimeout: 60000,
+    socketTimeout: 60000,
+    tls: { servername: 'smtp.gmail.com', rejectUnauthorized: false },
   });
 
   const subject = `每日 AI 情报 · ${dateStr}`;
-  const html = buildHtml(articles, dateStr);
+  const html = buildHtml(articles, dateStr, tokenUsage);
 
   try {
     await transporter.sendMail({ from: SENDER, to: RECIPIENT, subject, html });

@@ -9,6 +9,7 @@
     "dry": "node main.js --no-email --no-score"
   },
   "dependencies": {
+    "dotenv": "^17.4.1",
     "nodemailer": "^6.9.16",
     "openai": "^4.87.0",
     "rss-parser": "^3.13.0",

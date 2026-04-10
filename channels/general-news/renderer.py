@@ -241,6 +241,17 @@ a:hover { text-decoration: underline; }
 
 /* ── Filter JS ── */
 .hidden { display: none !important; }
+
+/* ── Usage bar ── */
+.usage-bar {
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  color: var(--text-muted);
+  display: inline-block;
+  font-size: 11px;
+  margin-top: 8px;
+  padding: 4px 12px;
+}
 """
 
 JS = """
@@ -347,7 +358,35 @@ def _render_card(art: dict) -> str:
 </div>"""
 
 
-def render(articles: list[dict], output_path: str) -> None:
+def _usage_bar_html(usage_info: dict, model_metrics: dict | None = None) -> str:
+    if not usage_info or not usage_info.get("total_tokens"):
+        return ""
+    model  = usage_info.get("model", "unknown")
+    prompt = usage_info.get("prompt_tokens", 0)
+    comp   = usage_info.get("completion_tokens", 0)
+    total  = usage_info.get("total_tokens", 0)
+
+    perf = ""
+    if model_metrics and model_metrics.get("perf_score") is not None:
+        ps    = model_metrics["perf_score"]
+        pr    = int(model_metrics.get("parse_rate", 0) * 100)
+        tr    = int(model_metrics.get("translation_rate", 0) * 100)
+        ss    = model_metrics.get("score_spread", 0)
+        color = "#69db7c" if ps >= 8 else ("#ffa94d" if ps >= 6 else "#ff6b6b")
+        perf = (
+            f' &nbsp;·&nbsp; <span style="color:{color};font-weight:700;">评分 {ps}/10</span>'
+            f' (解析率 {pr}% · 翻译率 {tr}% · 区分度 {ss:.1f}σ)'
+        )
+
+    return (
+        f'<span class="usage-bar">'
+        f'🤖 {_e(model)} &nbsp;·&nbsp; ↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens'
+        f'{perf}'
+        f'</span>'
+    )
+
+
+def render(articles: list[dict], output_path: str, usage_info: dict | None = None, model_metrics: dict | None = None) -> None:
     """Write a self-contained HTML digest to *output_path*."""
     date_str = datetime.now().strftime("%Y年%m月%d日")
     short_date = datetime.now().strftime("%Y-%m-%d")
@@ -394,6 +433,7 @@ def render(articles: list[dict], output_path: str) -> None:
       <span class="stat-badge">🔥 必读 {len(must_reads)}</span>
       <span class="stat-badge">⚡ 重要 {len(important)}</span>
       <span class="stat-badge">生成于 {gen_time}</span>
+      {_usage_bar_html(usage_info or {}, model_metrics)}
     </div>
   </div>
 </div>
