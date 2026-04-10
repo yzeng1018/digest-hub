@@ -28,23 +28,30 @@
     { "name": "Reforge",            "handle": "reforge",          "lang": "en" }
   ],
   "blogs": [
-    { "name": "Lenny's Newsletter",             "url": "https://www.lennysnewsletter.com/feed",          "lang": "en" },
-    { "name": "andrewchen.com",                 "url": "https://andrewchen.com/feed/",                   "lang": "en" },
-    { "name": "Kyle Poyar · Growth Unhinged",  "url": "https://kylepoyar.substack.com/feed",            "lang": "en" },
-    { "name": "Aakash Gupta · Product Growth", "url": "https://aakashg.substack.com/feed",              "lang": "en" },
-    { "name": "Marketing Examples",             "url": "https://marketingexamples.com/feed",             "lang": "en" },
-    { "name": "Elena Verna · Swipe Files",     "url": "https://elenaverna.substack.com/feed",           "lang": "en" },
-    { "name": "Demand Curve Newsletter",        "url": "https://newsletter.demandcurve.com/feed",        "lang": "en" },
-    { "name": "The Product-Led Geek",          "url": "https://productledgeek.substack.com/feed",        "lang": "en" },
-    { "name": "Wes Kao Newsletter",            "url": "https://newsletter.weskao.com/feed",              "lang": "en" },
-    { "name": "First Round Review",            "url": "https://review.firstround.com/feed.xml",          "lang": "en" },
-    { "name": "a16z Blog",                     "url": "https://a16z.com/feed/",                          "lang": "en" },
-    { "name": "Reforge Artifacts",            "url": "https://www.reforge.com/blog/rss",                 "lang": "en" }
+    { "name": "Lenny's Newsletter",   "url": "https://www.lennysnewsletter.com/feed",     "lang": "en" },
+    { "name": "andrewchen.com",        "url": "https://andrewchen.com/feed/",              "lang": "en" },
+    { "name": "Tomasz Tunguz",         "url": "https://tomtunguz.com/index.xml",           "lang": "en" },
+    { "name": "SaaStr Blog",           "url": "https://www.saastr.com/feed/",              "lang": "en" },
+    { "name": "NFX Essays",            "url": "https://www.nfx.com/feed",                 "lang": "en" },
+    { "name": "OpenView Blog",         "url": "https://openviewpartners.com/blog/feed/",   "lang": "en" },
+    { "name": "Wes Kao Newsletter",    "url": "https://newsletter.weskao.com/feed",        "lang": "en" },
+    { "name": "Kyle Poyar Growth Unhinged", "url": "https://kylepoyar.substack.com/feed", "lang": "en" },
+    { "name": "Aakash Product Growth",  "url": "https://aakashg.substack.com/feed",       "lang": "en" },
+    { "name": "Elena Verna",           "url": "https://elenaverna.substack.com/feed",      "lang": "en" }
+  ],
+  "podcasts": [
+    { "name": "Y Combinator",          "id": "UCcefcZRL2oaA_uBNeo5UNqg", "type": "channel" },
+    { "name": "a16z",                  "id": "UC9-y-6csu5WGm29I7JiwpnA", "type": "channel" },
+    { "name": "SaaStr",                "id": "UCwEH7GGtXbhEp-lPfSCgBXA", "type": "channel" },
+    { "name": "Lenny's Podcast",       "id": "UCiin0FqTiOuFLBJlN-RrMWw", "type": "channel" },
+    { "name": "First Round Capital",   "id": "UCXkK6B3VGFCbqkPqsQ1WKBA", "type": "channel" },
+    { "name": "Sequoia Capital",       "id": "UCGX7nGXpz-CmO_Arg-cgJ7A", "type": "channel" }
   ],
   "config": {
     "twitterMaxPerHandle": 5,
     "timeWindowHours": 168,
     "blogTimeWindowHours": 168,
+    "podcastTimeWindowHours": 168,
     "maxArticles": 8,
     "enrichMinScore": 7,
     "enrichMaxCount": 8,

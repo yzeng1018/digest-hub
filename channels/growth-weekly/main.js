@@ -11,6 +11,7 @@ loadEnv({ path: join(__dirname, '.env') });
 
 import { fetchTweets } from './scripts/fetchTweets.js';
 import { fetchBlogs }  from './scripts/fetchBlogs.js';
+import { fetchPodcasts } from './scripts/fetchPodcasts.js';
 import { deduplicate } from './scripts/dedup.js';
 import { scoreArticles, reportUsage, tokenUsage } from './scripts/score.js';
 import { enrichArticles } from './scripts/enrich.js';
@@ -34,12 +35,13 @@ async function main() {
   const weekStr = `${weekStart.toISOString().slice(0, 10)} ~ ${now.toISOString().slice(0, 10)}`;
   console.log(`\n开始抓取 Growth Weekly（过去7天：${weekStr}）…`);
 
-  const [tweets, blogs] = await Promise.all([
+  const [tweets, blogs, podcasts] = await Promise.all([
     fetchTweets(sources.twitter, sources.nitterInstances, cfg),
     fetchBlogs(sources.blogs, cfg),
+    fetchPodcasts(sources.podcasts || [], cfg),
   ]);
 
-  let articles = [...tweets, ...blogs];
+  let articles = [...tweets, ...blogs, ...podcasts];
   console.log(`\n抓取完成：共 ${articles.length} 条原始内容`);
 
   if (!articles.length) {
