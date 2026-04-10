@@ -359,7 +359,7 @@ def _render_card(art: dict) -> str:
 
 
 def _usage_bar_html(usage_info: dict, model_metrics: dict | None = None) -> str:
-    if not usage_info or not usage_info.get("total_tokens"):
+    if not usage_info or not usage_info.get("model"):
         return ""
     model  = usage_info.get("model", "unknown")
     prompt = usage_info.get("prompt_tokens", 0)

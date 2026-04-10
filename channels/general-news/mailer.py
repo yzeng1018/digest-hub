@@ -31,12 +31,13 @@ def _perf_color(score: float) -> str:
 
 
 def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
-    if not usage_info or not usage_info.get("total_tokens"):
+    if not usage_info or not usage_info.get("model"):
         return ""
     model  = usage_info.get("model", "unknown")
     prompt = usage_info.get("prompt_tokens", 0)
     comp   = usage_info.get("completion_tokens", 0)
     total  = usage_info.get("total_tokens", 0)
+    token_str = f"↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens" if total else "token 数据不可用"
 
     perf_html = ""
     if model_metrics and model_metrics.get("perf_score") is not None:
@@ -55,7 +56,7 @@ def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
         f'<div style="margin-top:10px;padding:6px 14px;background:rgba(255,255,255,0.15);'
         f'border-radius:8px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">'
         f'🤖 {model} &nbsp;·&nbsp; '
-        f'↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens'
+        f'{token_str}'
         f'{perf_html}'
         f'</div>'
     )

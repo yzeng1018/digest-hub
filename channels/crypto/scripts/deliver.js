@@ -11,12 +11,13 @@ function scoreColor(score) {
 }
 
 function usageBar(tokenUsage) {
-  if (!tokenUsage || !tokenUsage.total) return '';
-  const model  = tokenUsage.model || 'AI';
-  const prompt = (tokenUsage.prompt || 0).toLocaleString();
-  const comp   = (tokenUsage.completion || 0).toLocaleString();
-  const total  = tokenUsage.total.toLocaleString();
-  return `<div style="margin-top:10px;padding:5px 14px;background:rgba(255,255,255,0.15);border-radius:20px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">🤖 ${model} &nbsp;·&nbsp; ↑ ${prompt} &nbsp;↓ ${comp} &nbsp;共 ${total} tokens</div>`;
+  if (!tokenUsage || !tokenUsage.model) return '';
+  const model  = tokenUsage.model;
+  const total  = tokenUsage.total || 0;
+  const tokenStr = total
+    ? `↑ ${(tokenUsage.prompt||0).toLocaleString()} &nbsp;↓ ${(tokenUsage.completion||0).toLocaleString()} &nbsp;共 ${total.toLocaleString()} tokens`
+    : 'token 数据不可用';
+  return `<div style="margin-top:10px;padding:5px 14px;background:rgba(255,255,255,0.15);border-radius:20px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">🤖 ${model} &nbsp;·&nbsp; ${tokenStr}</div>`;
 }
 
 function buildHtml(articles, dateStr, tokenUsage = {}) {
