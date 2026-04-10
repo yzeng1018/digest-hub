@@ -1,8 +1,8 @@
-name: Growth Radar Daily Digest
+name: Growth Weekly Digest
 
 on:
   schedule:
-    - cron: "0 21 * * *"   # 北京时间 05:00（UTC 前一天 21:00）
+    - cron: "0 1 * * 6"   # 北京时间每周六 09:00（UTC 01:00）
   workflow_dispatch:
 
 jobs:
@@ -16,16 +16,16 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: channels/growth-radar/package-lock.json
+          cache-dependency-path: channels/growth-weekly/package-lock.json
 
       - name: 安装依赖
-        run: npm install --prefix channels/growth-radar
+        run: npm install --prefix channels/growth-weekly
 
-      - name: 运行 Growth Radar digest
+      - name: 运行 Growth Weekly digest
         env:
           QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
           GATEWAY_URL:        https://gateway.asksidra.com/v1
           GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
-        run: node channels/growth-radar/main.js
+        run: node channels/growth-weekly/main.js

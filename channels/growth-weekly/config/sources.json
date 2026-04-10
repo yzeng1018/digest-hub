@@ -1,0 +1,56 @@
+{
+  "nitterInstances": [
+    "https://nitter.net",
+    "https://nitter.privacydev.net",
+    "https://nitter.poast.org",
+    "https://nitter.woodland.cafe",
+    "https://nitter.1d4.us",
+    "https://nitter.fdn.fr"
+  ],
+  "twitter": [
+    { "name": "Lenny Rachitsky",    "handle": "lennysan",         "lang": "en" },
+    { "name": "Brian Balfour",      "handle": "bbalfour",         "lang": "en" },
+    { "name": "Andrew Chen",        "handle": "andrewchen",       "lang": "en" },
+    { "name": "Gustaf Alströmer",   "handle": "gustaf",           "lang": "en" },
+    { "name": "Kyle Poyar",         "handle": "Kyle_Poyar",       "lang": "en" },
+    { "name": "Aakash Gupta",       "handle": "aakashg0",         "lang": "en" },
+    { "name": "Shreyas Doshi",      "handle": "shreyas",          "lang": "en" },
+    { "name": "Tomasz Tunguz",      "handle": "ttunguz",          "lang": "en" },
+    { "name": "Harry Dry",          "handle": "harrydry",         "lang": "en" },
+    { "name": "Patrick McKenzie",   "handle": "patio11",          "lang": "en" },
+    { "name": "April Dunford",      "handle": "aprildunford",     "lang": "en" },
+    { "name": "Peter Yang",         "handle": "petergyang",       "lang": "en" },
+    { "name": "Elena Verna",        "handle": "elenaveerna",      "lang": "en" },
+    { "name": "Sean Ellis",         "handle": "seanellis",        "lang": "en" },
+    { "name": "Wes Kao",            "handle": "wes_kao",          "lang": "en" },
+    { "name": "Leah Tharin",        "handle": "leahtharin",       "lang": "en" },
+    { "name": "First Round Capital","handle": "firstround",       "lang": "en" },
+    { "name": "Reforge",            "handle": "reforge",          "lang": "en" }
+  ],
+  "blogs": [
+    { "name": "Lenny's Newsletter",             "url": "https://www.lennysnewsletter.com/feed",          "lang": "en" },
+    { "name": "andrewchen.com",                 "url": "https://andrewchen.com/feed/",                   "lang": "en" },
+    { "name": "Kyle Poyar · Growth Unhinged",  "url": "https://kylepoyar.substack.com/feed",            "lang": "en" },
+    { "name": "Aakash Gupta · Product Growth", "url": "https://aakashg.substack.com/feed",              "lang": "en" },
+    { "name": "Marketing Examples",             "url": "https://marketingexamples.com/feed",             "lang": "en" },
+    { "name": "Elena Verna · Swipe Files",     "url": "https://elenaverna.substack.com/feed",           "lang": "en" },
+    { "name": "Demand Curve Newsletter",        "url": "https://newsletter.demandcurve.com/feed",        "lang": "en" },
+    { "name": "The Product-Led Geek",          "url": "https://productledgeek.substack.com/feed",        "lang": "en" },
+    { "name": "Wes Kao Newsletter",            "url": "https://newsletter.weskao.com/feed",              "lang": "en" },
+    { "name": "First Round Review",            "url": "https://review.firstround.com/feed.xml",          "lang": "en" },
+    { "name": "a16z Blog",                     "url": "https://a16z.com/feed/",                          "lang": "en" },
+    { "name": "Reforge Artifacts",            "url": "https://www.reforge.com/blog/rss",                 "lang": "en" }
+  ],
+  "config": {
+    "twitterMaxPerHandle": 5,
+    "timeWindowHours": 168,
+    "blogTimeWindowHours": 168,
+    "maxArticles": 8,
+    "enrichMinScore": 7,
+    "enrichMaxCount": 8,
+    "scoreMustRead": 8,
+    "scoreImportant": 6,
+    "dedupThreshold": 0.55,
+    "scoreBatchSize": 10
+  }
+}
