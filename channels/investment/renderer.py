@@ -137,7 +137,7 @@ body{{background:#0d1117;color:#e6edf3;font-family:-apple-system,'PingFang SC','
 <div class="header">
   <h1>每日 <span>投资</span> 情报</h1>
   <div class="meta">{now_str}</div>
-  {_usage_bar(usage_info or {{}}, model_metrics)}
+  {_usage_bar(usage_info or dict(), model_metrics)}
   <div class="stats">
     <span class="stat" style="background:rgba(248,81,73,0.15);color:#f85149;">🔥 必读 {must_count}</span>
     <span class="stat" style="background:rgba(227,179,65,0.15);color:#e3b341;">⚡ 重要 {imp_count}</span>
