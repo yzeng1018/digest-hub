@@ -9,8 +9,6 @@ const ENRICH_PODCAST_PROMPT = readFileSync(join(__dirname, '../prompts/enrich-po
 
 const GATEWAY_URL     = process.env.GATEWAY_URL     || 'http://localhost:8000/v1';
 const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || 'dummy';
-const QWEN_API_KEY    = process.env.QWEN_API_KEY    || '';
-const ZHIPU_API_KEY   = process.env.ZHIPU_API_KEY   || '';
 
 function makeClient(baseURL, apiKey) {
   return new OpenAI({ baseURL, apiKey });
@@ -22,27 +20,9 @@ async function callAI(systemPrompt, userMsg) {
     { role: 'user', content: userMsg },
   ];
 
-  try {
-    const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
-    const r = await c.chat.completions.create({ model: 'free', messages, max_tokens: 1024 });
-    return r.choices[0].message.content || '';
-  } catch { /* fall through */ }
-
-  if (QWEN_API_KEY) {
-    try {
-      const c = makeClient('https://dashscope.aliyuncs.com/compatible-mode/v1', QWEN_API_KEY);
-      const r = await c.chat.completions.create({ model: 'qwen-plus', messages, max_tokens: 1024 });
-      return r.choices[0].message.content || '';
-    } catch { /* fall through */ }
-  }
-
-  if (ZHIPU_API_KEY) {
-    const c = makeClient('https://open.bigmodel.cn/api/paas/v4', ZHIPU_API_KEY);
-    const r = await c.chat.completions.create({ model: 'glm-4-flash', messages, max_tokens: 1024 });
-    return r.choices[0].message.content || '';
-  }
-
-  throw new Error('所有 AI provider 均失败');
+  const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
+  const r = await c.chat.completions.create({ model: 'free', messages, max_tokens: 1024 });
+  return r.choices[0].message.content || '';
 }
 
 function parseJson(text) {

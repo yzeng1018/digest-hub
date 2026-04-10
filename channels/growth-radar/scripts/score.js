@@ -8,8 +8,6 @@ const SYSTEM_PROMPT = readFileSync(join(__dirname, '../prompts/score.md'), 'utf8
 
 const GATEWAY_URL     = process.env.GATEWAY_URL     || 'http://localhost:8000/v1';
 const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || 'dummy';
-const QWEN_API_KEY    = process.env.QWEN_API_KEY    || '';
-const ZHIPU_API_KEY   = process.env.ZHIPU_API_KEY   || '';
 
 export const tokenUsage = { model: '', prompt: 0, completion: 0, total: 0 };
 
@@ -18,31 +16,9 @@ function makeClient(baseURL, apiKey) {
 }
 
 async function callAI(messages) {
-  // 1. Gateway
-  try {
-    const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
-    const r = await c.chat.completions.create({ model: 'free', messages, max_tokens: 4096 });
-    return { response: r, backend: 'gateway' };
-  } catch (e) {
-    console.log(`  [gateway] 不可用 (${e.message?.slice(0, 50)})，切换 Qwen…`);
-  }
-
-  // 2. Qwen direct
-  if (QWEN_API_KEY) {
-    try {
-      const c = makeClient('https://dashscope.aliyuncs.com/compatible-mode/v1', QWEN_API_KEY);
-      const r = await c.chat.completions.create({ model: 'qwen-max', messages, max_tokens: 4096 });
-      return { response: r, backend: 'qwen' };
-    } catch (e) {
-      console.log(`  [qwen] 失败 (${e.message?.slice(0, 50)})，切换 GLM…`);
-    }
-  }
-
-  // 3. GLM fallback
-  if (!ZHIPU_API_KEY) throw new Error('所有 AI provider 均失败，ZHIPU_API_KEY 未配置');
-  const c = makeClient('https://open.bigmodel.cn/api/paas/v4', ZHIPU_API_KEY);
-  const r = await c.chat.completions.create({ model: 'glm-4-flash', messages, max_tokens: 4096 });
-  return { response: r, backend: 'glm' };
+  const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
+  const r = await c.chat.completions.create({ model: 'best', messages, max_tokens: 4096 });
+  return { response: r, backend: 'gateway' };
 }
 
 function summaryFor(art) {
@@ -58,7 +34,7 @@ function parseResult(text) {
 }
 
 export async function scoreArticles(articles, batchSize = 10) {
-  if (!QWEN_API_KEY && !GATEWAY_URL) {
+  if (!GATEWAY_URL) {
     console.log('[WARN] 无 AI key，跳过评分');
     articles.forEach(a => { a.score = 5; a.reason_zh = ''; a.title_zh = a.title; a.summary_zh = a.summary || ''; });
     return articles;
@@ -114,17 +90,6 @@ export async function scoreArticles(articles, batchSize = 10) {
   return articles;
 }
 
-export async function reportUsage(project = 'digest-hub/ai-info') {
-  if (!tokenUsage.total) return;
-  try {
-    const res = await fetch(`${GATEWAY_URL.replace('/v1', '')}/report`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GATEWAY_API_KEY}` },
-      body: JSON.stringify({ project, ...tokenUsage }),
-      signal: AbortSignal.timeout(5000),
-    });
-    if (res.ok) console.log(`  [token-mgmt] 已上报 ${tokenUsage.total.toLocaleString()} tokens`);
-  } catch {
-    // non-fatal
-  }
+export async function reportUsage(_project) {
+  // Usage is now tracked automatically by the gateway — no manual reporting needed.
 }
