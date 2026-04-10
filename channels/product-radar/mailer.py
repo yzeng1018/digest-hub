@@ -43,35 +43,45 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
         crypto_rel   = art.get("crypto_relevance_zh", "")
         data_pt      = art.get("data_point_zh", "")
 
+        og_image       = art.get("og_image", "")
+        full_summary   = art.get("full_summary_zh", "")
+        display_summary = full_summary or summary
+
         title_en_row = (
-            f'<div style="font-size:11px;color:#868e96;margin-top:2px;">{title_en}</div>'
+            f'<div style="font-size:11px;color:#868e96;margin-top:2px;font-style:italic;">{title_en}</div>'
             if title_en else ""
         )
+        image_row = (
+            f'<div style="margin:10px 0 4px 0;">'
+            f'<img src="{og_image}" alt="" style="width:100%;max-height:200px;'
+            f'object-fit:cover;border-radius:6px;display:block;" /></div>'
+            if og_image else ""
+        )
         insight_row = (
-            f'<div style="margin-top:8px;padding:6px 10px;background:#e6fcf5;'
-            f'border-left:3px solid #20c997;border-radius:0 4px 4px 0;'
-            f'font-size:12px;color:#0b7a63;">💡 {insight}</div>'
+            f'<div style="margin-top:8px;padding:7px 12px;background:#e6fcf5;'
+            f'border-left:3px solid #20c997;border-radius:0 5px 5px 0;'
+            f'font-size:12px;color:#0b7a63;line-height:1.6;">💡 <strong>产品洞察：</strong>{insight}</div>'
             if insight else ""
         )
         pattern_row = (
-            f'<div style="margin-top:5px;padding:4px 10px;background:#f3f0ff;'
+            f'<div style="margin-top:5px;padding:5px 10px;background:#f3f0ff;'
             f'border-radius:4px;font-size:11px;color:#6741d9;">🧩 设计模式：{pattern}</div>'
             if pattern else ""
         )
         crypto_row = (
-            f'<div style="margin-top:5px;padding:4px 10px;background:#fff3bf;'
+            f'<div style="margin-top:5px;padding:5px 10px;background:#fff3bf;'
             f'border-radius:4px;font-size:11px;color:#7c5e00;">₿ 加密借鉴：{crypto_rel}</div>'
             if crypto_rel and crypto_rel != "暂无直接关联" else ""
         )
         data_row = (
-            f'<div style="margin-top:5px;padding:4px 10px;background:#e8f4fd;'
+            f'<div style="margin-top:5px;padding:5px 10px;background:#e8f4fd;'
             f'border-radius:4px;font-size:11px;color:#1c7ed6;">📊 {data_pt}</div>'
             if data_pt else ""
         )
 
         rows += f"""
 <tr>
-  <td style="padding:16px 20px;border-bottom:1px solid #dee2e6;">
+  <td style="padding:18px 20px;border-bottom:1px solid #dee2e6;">
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td width="44" valign="top" style="padding-right:12px;">
@@ -91,8 +101,9 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
                          font-size:11px;color:#6c757d;background:#f8f9fa;
                          border:1px solid #dee2e6;margin-left:4px;">{source}</span>
           </div>
-          <div style="margin-top:7px;font-size:13px;color:#495057;line-height:1.65;">
-            {summary}
+          {image_row}
+          <div style="margin-top:8px;font-size:13px;color:#495057;line-height:1.75;">
+            {display_summary}
           </div>
           {insight_row}
           {pattern_row}
