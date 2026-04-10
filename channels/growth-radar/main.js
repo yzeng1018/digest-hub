@@ -85,4 +85,4 @@ async function main() {
   console.log(`\n✅ 完成。共 ${articles.length} 条 · 🔥 必读 ${mustReads} · ⚡ 重要 ${important}`);
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+main().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });

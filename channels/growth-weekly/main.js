@@ -96,4 +96,4 @@ async function main() {
   console.log(`\n✅ 完成。本周精读 ${articles.length} 篇 · 🔥 强烈推荐 ${mustReads} 篇`);
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+main().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
