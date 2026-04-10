@@ -1,14 +1,14 @@
-name: 产品设计雷达 Daily Digest
+name: 产品设计雷达 · 周报
 
 on:
   schedule:
-    - cron: "30 21 * * *"   # 北京时间 05:30（UTC 21:30 前一天）
+    - cron: "0 2 * * 6"   # 北京时间周六 10:00（UTC 周六 02:00）
   workflow_dispatch:
 
 jobs:
-  digest:
+  weekly:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -21,7 +21,7 @@ jobs:
       - name: 安装依赖
         run: pip install -r channels/product-radar/requirements.txt
 
-      - name: 运行产品设计雷达 digest
+      - name: 运行产品设计周报
         env:
           QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
@@ -29,4 +29,4 @@ jobs:
           GATEWAY_URL:        https://gateway.asksidra.com/v1
           GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
           ZHIPU_API_KEY:      ${{ secrets.ZHIPU_API_KEY }}
-        run: python channels/product-radar/main.py
+        run: python channels/product-radar/main_weekly.py
