@@ -87,6 +87,8 @@ export async function scoreArticles(articles, batchSize = 10) {
     }
   }
 
+  if (!tokenUsage.model) tokenUsage.model = 'gateway/blocked';
+
   return articles;
 }
 

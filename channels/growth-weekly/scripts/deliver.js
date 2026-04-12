@@ -124,5 +124,7 @@ export async function deliver(markdown, articles, dateStr, weekStr, tokenUsage =
     console.log(`✉️  Growth Weekly 已发送 → ${RECIPIENT}`);
   } catch (err) {
     console.log(`[ERROR] 邮件发送失败: ${err.message}`);
+  } finally {
+    transporter.close();
   }
 }

@@ -87,6 +87,9 @@ export async function scoreArticles(articles, batchSize = 10) {
     }
   }
 
+  // 兜底：若所有批次均失败（如 gateway 被 Cloudflare 拦截），确保 model 字段有值
+  if (!tokenUsage.model) tokenUsage.model = 'gateway/blocked';
+
   return articles;
 }
 

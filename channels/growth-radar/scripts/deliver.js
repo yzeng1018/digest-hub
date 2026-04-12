@@ -116,5 +116,7 @@ export async function deliver(markdown, articles, dateStr, tokenUsage = {}) {
     console.log(`✉️  Growth Radar 已发送 → ${RECIPIENT}`);
   } catch (err) {
     console.log(`[ERROR] 邮件发送失败: ${err.message}`);
+  } finally {
+    transporter.close();
   }
 }
