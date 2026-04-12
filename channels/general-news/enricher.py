@@ -11,40 +11,18 @@ This keeps costs low: only top articles get the deep treatment.
 """
 
 import json
-import os
 import re
 import time
 
-import httpx
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
 
 from config import ENRICH_MIN_SCORE, ENRICH_MAX_COUNT
 
-GATEWAY_URL      = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
-GATEWAY_API_KEY  = os.environ.get("GATEWAY_API_KEY", "dummy")
-VOLCENGINE_URL   = "https://ark.cn-beijing.volces.com/api/v3"
-VOLCENGINE_MODEL = "ep-20260323110232-cjr59"
-
-
-def _complete(messages: list, **kwargs):
-    """两级 fallback：本地网关(free tier) → 火山方舟豆包 Lite（每日 200万 tokens 免费）。"""
-    try:
-        c = OpenAI(
-            api_key=GATEWAY_API_KEY,
-            base_url=GATEWAY_URL,
-            http_client=httpx.Client(trust_env=False),
-        )
-        return c.chat.completions.create(model="free", messages=messages, **kwargs)
-    except Exception:
-        pass
-
-    ark_key = os.environ.get("VOLCENGINE_API_KEY", "")
-    if not ark_key:
-        raise RuntimeError("网关不可用，且未配置 VOLCENGINE_API_KEY（火山方舟兜底不可用）")
-    c = OpenAI(api_key=ark_key, base_url=VOLCENGINE_URL)
-    return c.chat.completions.create(model=VOLCENGINE_MODEL, messages=messages, **kwargs)
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from common.scorer import call_ai as _complete
 
 ENRICH_SYSTEM = """你是一位顶级的科技创业者和风险投资人。
 给定一篇新闻文章的完整正文（或网络搜索摘要），请提取以下4个字段：

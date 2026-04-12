@@ -1,39 +1,15 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import OpenAI from 'openai';
+import { callAI as _callAI } from '../../../common/ai.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SYSTEM_PROMPT = readFileSync(join(__dirname, '../prompts/score.md'), 'utf8');
 
-const GATEWAY_URL     = process.env.GATEWAY_URL     || 'http://localhost:8000/v1';
-const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || 'dummy';
-
-const VOLCENGINE_URL   = 'https://ark.cn-beijing.volces.com/api/v3';
-const VOLCENGINE_KEY   = process.env.VOLCENGINE_API_KEY || '';
-const VOLCENGINE_MODEL = 'ep-20260323110232-cjr59';  // 豆包 Lite，每日 200万 tokens 免费
-
 export const tokenUsage = { model: '', prompt: 0, completion: 0, total: 0 };
 
-function makeClient(baseURL, apiKey) {
-  return new OpenAI({ baseURL, apiKey });
-}
-
-async function callAI(messages) {
-  try {
-    const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
-    const r = await c.chat.completions.create({ model: 'best', messages, max_tokens: 4096 });
-    return { response: r, backend: 'gateway' };
-  } catch (err) {
-    if (VOLCENGINE_KEY && (err.status === 403 || err.status === 429 || !err.status)) {
-      console.log(`  [WARN] gateway 不可用(${err.status || err.code})，切换到火山方舟…`);
-      const c = makeClient(VOLCENGINE_URL, VOLCENGINE_KEY);
-      const r = await c.chat.completions.create({ model: VOLCENGINE_MODEL, messages, max_tokens: 4096 });
-      return { response: r, backend: 'volcengine' };
-    }
-    throw err;
-  }
-}
+// growth-radar 使用 'best' tier（高质量模型）
+const callAI = (messages) => _callAI(messages, 4096, 'best');
 
 function summaryFor(art) {
   if (art.platform === 'Podcast' && art.transcript) return art.transcript.slice(0, 2000);
@@ -48,12 +24,6 @@ function parseResult(text) {
 }
 
 export async function scoreArticles(articles, batchSize = 10) {
-  if (!GATEWAY_URL) {
-    console.log('[WARN] 无 AI key，跳过评分');
-    articles.forEach(a => { a.score = 5; a.reason_zh = ''; a.title_zh = a.title; a.summary_zh = a.summary || ''; });
-    return articles;
-  }
-
   const USER_TEMPLATE = (count, json) =>
     `请对以下 ${count} 条内容进行评估。\n\n严格按照以下 JSON 格式返回，不要有任何其他文字，不要有 markdown 代码块：\n[\n  {\n    "id": "序号，从0开始",\n    "score": 评分数字(1-10),\n    "reason_zh": "一句话说明价值（20字以内）",\n    "title_zh": "中文标题",\n    "summary_zh": "中文摘要2-3句"\n  }\n]\n\n内容列表：\n${json}`;
 

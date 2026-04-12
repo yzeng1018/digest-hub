@@ -1,29 +1,11 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import OpenAI from 'openai';
+import { callAIText as callAI } from '../../../common/ai.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ENRICH_PROMPT         = readFileSync(join(__dirname, '../prompts/enrich.md'), 'utf8');
 const ENRICH_PODCAST_PROMPT = readFileSync(join(__dirname, '../prompts/enrich-podcast.md'), 'utf8');
-
-const GATEWAY_URL     = process.env.GATEWAY_URL     || 'http://localhost:8000/v1';
-const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || 'dummy';
-
-function makeClient(baseURL, apiKey) {
-  return new OpenAI({ baseURL, apiKey });
-}
-
-async function callAI(systemPrompt, userMsg) {
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userMsg },
-  ];
-
-  const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
-  const r = await c.chat.completions.create({ model: 'free', messages, max_tokens: 1024 });
-  return r.choices[0].message.content || '';
-}
 
 function parseJson(text) {
   const clean = text.replace(/```(?:json)?/g, '').trim();

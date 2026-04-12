@@ -78,6 +78,15 @@ def get_metrics(articles: list[dict]) -> dict:
     }
 
 
+def call_ai(messages: list, **kwargs):
+    """
+    公共 AI 调用入口（供 enricher 等模块使用）。
+    自动处理 gateway → 火山方舟 fallback，只返回 response 对象。
+    """
+    resp, _ = _complete(messages, **kwargs)
+    return resp
+
+
 def _complete(messages: list, **kwargs):
     """
     两级 fallback 链：本地网关(free tier) → GLM-4-Flash 直连。
