@@ -20,6 +20,10 @@ GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
 VOLCENGINE_URL   = "https://ark.cn-beijing.volces.com/api/v3"
 VOLCENGINE_MODEL = "ep-20260323110232-cjr59"
 
+# Qwen Max 最终兜底
+QWEN_URL   = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+QWEN_MODEL = "qwen-max"
+
 # 模块级 usage 累计器，每次 score_articles 调用前重置
 _usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
@@ -105,14 +109,25 @@ def _complete(messages: list, **kwargs):
     except Exception as e:
         print(f"  [gateway] 不可用 ({type(e).__name__})，切换火山方舟…")
 
-    # 2. 火山方舟兜底（豆包 Lite，每日 200万 tokens 免费）
+    # 2. 火山方舟（豆包 Lite，每日 200万 tokens 免费）
     ark_key = os.environ.get("VOLCENGINE_API_KEY", "")
-    if not ark_key:
-        raise RuntimeError("网关不可用，且未配置 VOLCENGINE_API_KEY（火山方舟兜底不可用）")
-    print(f"  [volcengine] 使用 {VOLCENGINE_MODEL} 兜底…")
-    c = OpenAI(api_key=ark_key, base_url=VOLCENGINE_URL)
-    resp = c.chat.completions.create(model=VOLCENGINE_MODEL, messages=messages, **kwargs)
-    return resp, "volcengine"
+    if ark_key:
+        try:
+            print(f"  [volcengine] 使用 {VOLCENGINE_MODEL}…")
+            c = OpenAI(api_key=ark_key, base_url=VOLCENGINE_URL)
+            resp = c.chat.completions.create(model=VOLCENGINE_MODEL, messages=messages, **kwargs)
+            return resp, "volcengine"
+        except Exception as e:
+            print(f"  [volcengine] 不可用 ({type(e).__name__})，切换 Qwen Max…")
+
+    # 3. Qwen Max 最终兜底
+    qwen_key = os.environ.get("QWEN_API_KEY", "")
+    if not qwen_key:
+        raise RuntimeError("所有 AI 服务不可用：gateway / 火山方舟均失败，且未配置 QWEN_API_KEY")
+    print(f"  [qwen] 使用 {QWEN_MODEL} 兜底…")
+    c = OpenAI(api_key=qwen_key, base_url=QWEN_URL)
+    resp = c.chat.completions.create(model=QWEN_MODEL, messages=messages, **kwargs)
+    return resp, "qwen"
 
 USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
 
