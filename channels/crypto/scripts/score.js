@@ -9,6 +9,10 @@ const SYSTEM_PROMPT = readFileSync(join(__dirname, '../prompts/score.md'), 'utf8
 const GATEWAY_URL     = process.env.GATEWAY_URL     || 'http://localhost:8000/v1';
 const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || 'dummy';
 
+const VOLCENGINE_URL   = 'https://ark.cn-beijing.volces.com/api/v3';
+const VOLCENGINE_KEY   = process.env.VOLCENGINE_API_KEY || '';
+const VOLCENGINE_MODEL = 'ep-20260323110232-cjr59';  // 豆包 Lite，每日 200万 tokens 免费
+
 export const tokenUsage = { model: '', prompt: 0, completion: 0, total: 0 };
 
 function makeClient(baseURL, apiKey) {
@@ -16,9 +20,19 @@ function makeClient(baseURL, apiKey) {
 }
 
 async function callAI(messages) {
-  const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
-  const r = await c.chat.completions.create({ model: 'free', messages, max_tokens: 4096 });
-  return { response: r, backend: 'gateway' };
+  try {
+    const c = makeClient(GATEWAY_URL, GATEWAY_API_KEY);
+    const r = await c.chat.completions.create({ model: 'free', messages, max_tokens: 4096 });
+    return { response: r, backend: 'gateway' };
+  } catch (err) {
+    if (VOLCENGINE_KEY && (err.status === 403 || err.status === 429 || !err.status)) {
+      console.log(`  [WARN] gateway 不可用(${err.status || err.code})，切换到火山方舟…`);
+      const c = makeClient(VOLCENGINE_URL, VOLCENGINE_KEY);
+      const r = await c.chat.completions.create({ model: VOLCENGINE_MODEL, messages, max_tokens: 4096 });
+      return { response: r, backend: 'volcengine' };
+    }
+    throw err;
+  }
 }
 
 function parseResult(text) {
