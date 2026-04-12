@@ -16,9 +16,9 @@ from openai import OpenAI
 GATEWAY_URL     = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
 GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
 
-# GLM 兜底（glm-4-flash 永久免费）
-GLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
-GLM_MODEL    = "glm-4-flash"
+# 火山方舟兜底（豆包 Lite，每日 200万 tokens 免费）
+VOLCENGINE_URL   = "https://ark.cn-beijing.volces.com/api/v3"
+VOLCENGINE_MODEL = "ep-20260323110232-cjr59"
 
 # 模块级 usage 累计器，每次 score_articles 调用前重置
 _usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -94,16 +94,16 @@ def _complete(messages: list, **kwargs):
         resp = c.chat.completions.create(model="free", messages=messages, **kwargs)
         return resp, "gateway"
     except Exception as e:
-        print(f"  [gateway] 不可用 ({type(e).__name__})，切换 GLM 兜底…")
+        print(f"  [gateway] 不可用 ({type(e).__name__})，切换火山方舟…")
 
-    # 2. GLM-4-Flash 兜底（永久免费）
-    glm_key = os.environ.get("ZHIPU_API_KEY", "")
-    if not glm_key:
-        raise RuntimeError("网关不可用，且未配置 ZHIPU_API_KEY（GLM 兜底不可用）")
-    print(f"  [glm] 使用 {GLM_MODEL} 兜底…")
-    c = OpenAI(api_key=glm_key, base_url=GLM_BASE_URL)
-    resp = c.chat.completions.create(model=GLM_MODEL, messages=messages, **kwargs)
-    return resp, "glm"
+    # 2. 火山方舟兜底（豆包 Lite，每日 200万 tokens 免费）
+    ark_key = os.environ.get("VOLCENGINE_API_KEY", "")
+    if not ark_key:
+        raise RuntimeError("网关不可用，且未配置 VOLCENGINE_API_KEY（火山方舟兜底不可用）")
+    print(f"  [volcengine] 使用 {VOLCENGINE_MODEL} 兜底…")
+    c = OpenAI(api_key=ark_key, base_url=VOLCENGINE_URL)
+    resp = c.chat.completions.create(model=VOLCENGINE_MODEL, messages=messages, **kwargs)
+    return resp, "volcengine"
 
 USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
 
@@ -209,7 +209,7 @@ def score_articles(
             # 记录实际模型名（优先用响应中的）
             if not _usage["model"]:
                 _usage["model"] = getattr(resp, "model", "") or (
-                    "gateway/free" if backend == "gateway" else GLM_MODEL
+                    "gateway/free" if backend == "gateway" else VOLCENGINE_MODEL
                 )
             results = _parse_response(resp.choices[0].message.content or "")
             if results:
@@ -222,5 +222,9 @@ def score_articles(
                 art["reason_zh"] = art.get("reason_zh") or ""
                 art["title_zh"] = art.get("title_zh") or art["title"]
                 art["summary_zh"] = art.get("summary_zh") or art["summary"]
+
+    # 兜底：若所有批次均失败，确保 model 字段有值
+    if not _usage["model"]:
+        _usage["model"] = "gateway/blocked"
 
     return articles

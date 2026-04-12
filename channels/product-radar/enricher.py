@@ -22,13 +22,14 @@ from openai import OpenAI
 
 from config import ENRICH_MIN_SCORE, ENRICH_MAX_COUNT
 
-GATEWAY_URL     = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
-GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
-GLM_BASE_URL    = "https://open.bigmodel.cn/api/paas/v4"
-GLM_MODEL       = "glm-4-flash"
+GATEWAY_URL      = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
+GATEWAY_API_KEY  = os.environ.get("GATEWAY_API_KEY", "dummy")
+VOLCENGINE_URL   = "https://ark.cn-beijing.volces.com/api/v3"
+VOLCENGINE_MODEL = "ep-20260323110232-cjr59"
 
 
 def _complete(messages: list, **kwargs):
+    """两级 fallback：本地网关(free tier) → 火山方舟豆包 Lite（每日 200万 tokens 免费）。"""
     try:
         c = OpenAI(
             api_key=GATEWAY_API_KEY,
@@ -39,11 +40,11 @@ def _complete(messages: list, **kwargs):
     except Exception:
         pass
 
-    glm_key = os.environ.get("ZHIPU_API_KEY", "")
-    if not glm_key:
-        raise RuntimeError("网关不可用，且未配置 ZHIPU_API_KEY")
-    c = OpenAI(api_key=glm_key, base_url=GLM_BASE_URL)
-    return c.chat.completions.create(model=GLM_MODEL, messages=messages, **kwargs)
+    ark_key = os.environ.get("VOLCENGINE_API_KEY", "")
+    if not ark_key:
+        raise RuntimeError("网关不可用，且未配置 VOLCENGINE_API_KEY（火山方舟兜底不可用）")
+    c = OpenAI(api_key=ark_key, base_url=VOLCENGINE_URL)
+    return c.chat.completions.create(model=VOLCENGINE_MODEL, messages=messages, **kwargs)
 
 
 ENRICH_SYSTEM = """你是一位在顶级加密交易所（币安）负责产品的资深 PM，有快手/滴滴的超级App产品经验。
