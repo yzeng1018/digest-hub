@@ -57,11 +57,11 @@ export async function scoreArticles(articles, batchSize = 10) {
         { role: 'user', content: USER_TEMPLATE(batch.length, JSON.stringify(items, null, 2)) },
       ]);
 
+      if (!tokenUsage.model) tokenUsage.model = response.model || `${backend}/auto`;
       if (response.usage) {
         tokenUsage.prompt     += response.usage.prompt_tokens     || 0;
         tokenUsage.completion += response.usage.completion_tokens || 0;
         tokenUsage.total      += response.usage.total_tokens      || 0;
-        if (!tokenUsage.model) tokenUsage.model = response.model || `${backend}/auto`;
       }
 
       const results = parseResult(response.choices[0].message.content || '');

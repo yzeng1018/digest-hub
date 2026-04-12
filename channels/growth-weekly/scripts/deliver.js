@@ -18,8 +18,8 @@ function buildHtml(articles, dateStr, weekStr, tokenUsage = {}) {
   const mustCount = articles.filter(a => a.score >= 8).length;
   const impCount  = articles.filter(a => a.score >= 6 && a.score < 8).length;
 
-  const usageStr = tokenUsage.total
-    ? `<div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.6);">🤖 ${tokenUsage.model || 'AI'} · ${tokenUsage.total.toLocaleString()} tokens</div>`
+  const usageStr = tokenUsage.model
+    ? `<div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.6);">🤖 ${tokenUsage.model} · ${tokenUsage.total ? tokenUsage.total.toLocaleString() + ' tokens' : '—'}</div>`
     : '';
 
   const rows = articles.map((art, idx) => {

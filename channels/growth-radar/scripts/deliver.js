@@ -11,10 +11,10 @@ function scoreColor(score) {
 }
 
 function usageBar(tokenUsage) {
-  if (!tokenUsage || !tokenUsage.total) return '';
-  const model  = tokenUsage.model || 'AI';
-  const total  = tokenUsage.total.toLocaleString();
-  return `<div style="margin-top:10px;padding:5px 14px;background:rgba(255,255,255,0.15);border-radius:20px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">🤖 ${model} &nbsp;·&nbsp; ${total} tokens</div>`;
+  if (!tokenUsage || !tokenUsage.model) return '';
+  const model    = tokenUsage.model;
+  const tokenStr = tokenUsage.total ? tokenUsage.total.toLocaleString() + ' tokens' : '—';
+  return `<div style="margin-top:10px;padding:5px 14px;background:rgba(255,255,255,0.15);border-radius:20px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">🤖 ${model} &nbsp;·&nbsp; ${tokenStr}</div>`;
 }
 
 function buildHtml(articles, dateStr, tokenUsage = {}) {

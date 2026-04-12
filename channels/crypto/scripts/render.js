@@ -3,8 +3,8 @@ export function render(articles, dateStr, tokenUsage = {}) {
   const important = articles.filter(a => a.score >= 6 && a.score < 9);
   const general   = articles.filter(a => a.score < 6);
 
-  const tokenLine = tokenUsage.total
-    ? `*🤖 ${tokenUsage.model || 'AI'} · ${tokenUsage.total.toLocaleString()} tokens*\n\n`
+  const tokenLine = tokenUsage.model
+    ? `*🤖 ${tokenUsage.model} · ${tokenUsage.total ? tokenUsage.total.toLocaleString() + ' tokens' : '—'}*\n\n`
     : '';
 
   const lines = [];
