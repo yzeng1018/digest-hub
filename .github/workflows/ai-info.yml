@@ -19,7 +19,7 @@ jobs:
           cache-dependency-path: channels/ai-info/package-lock.json
 
       - name: 安装依赖
-        run: npm install --prefix channels/ai-info
+        run: npm install && npm install --prefix channels/ai-info
 
       - name: 运行 AI情报 digest
         env:

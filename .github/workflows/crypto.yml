@@ -19,7 +19,7 @@ jobs:
           cache-dependency-path: channels/crypto/package-lock.json
 
       - name: 安装依赖
-        run: npm install --prefix channels/crypto
+        run: npm install && npm install --prefix channels/crypto
 
       - name: 运行加密情报 digest
         env:
