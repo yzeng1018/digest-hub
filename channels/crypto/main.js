@@ -83,6 +83,7 @@ async function main() {
   const mustReads = articles.filter(a => (a.score || 0) >= cfg.scoreMustRead).length;
   const important = articles.filter(a => (a.score || 0) >= cfg.scoreImportant && (a.score || 0) < cfg.scoreMustRead).length;
   console.log(`\n✅ 完成。共 ${articles.length} 条 · 🔥 必读 ${mustReads} · ⚡ 重要 ${important}`);
+  process.exit(0);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
