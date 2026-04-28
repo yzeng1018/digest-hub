@@ -126,12 +126,12 @@ HN_MAX_IN_DIGEST = 5
 TIME_WINDOW_HOURS = 24
 
 # After dedup + scoring, cap the final digest at this many articles
-MAX_ARTICLES = 30
+MAX_ARTICLES = 15
 
 # Second-pass enrichment: only enrich articles scoring >= this
 ENRICH_MIN_SCORE = 8
 # Max articles to enrich (DuckDuckGo rate limit friendly)
-ENRICH_MAX_COUNT = 10
+ENRICH_MAX_COUNT = 5
 
 # Score thresholds
 SCORE_MUST_READ = 8    # 8-10 → 必读

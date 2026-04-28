@@ -222,11 +222,11 @@ SOURCES = [
 TIME_WINDOW_HOURS = 36
 
 # 最终邮件最多展示条数
-MAX_ARTICLES = 20
+MAX_ARTICLES = 10
 
 # 第二次精细化分析阈值（分数 >= 此值才 enrich）
 ENRICH_MIN_SCORE = 7
-ENRICH_MAX_COUNT = 8
+ENRICH_MAX_COUNT = 4
 
 # 评分阈值
 SCORE_MUST_READ = 8

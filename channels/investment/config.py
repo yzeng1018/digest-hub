@@ -275,11 +275,11 @@ TIME_WINDOW_HOURS = 24
 INSIGHT_WINDOW_DAYS = 14
 
 # ── 上限与评分参数 ────────────────────────────────────────────────────────────
-MAX_ARTICLES = 25
+MAX_ARTICLES = 12
 INSIGHT_MIN_RATIO = 0.20   # Blog/Memo/Podcast 最少占总数的 20%
 SOURCE_CAPS = {"36氪": 2}  # 每个来源的最大文章数（按分数保留最高的）
 ENRICH_MIN_SCORE = 8
-ENRICH_MAX_COUNT = 10
+ENRICH_MAX_COUNT = 5
 
 SCORE_MUST_READ = 8
 SCORE_IMPORTANT = 6
