@@ -1,13 +1,24 @@
 """
 上报 token 消耗到 token-management 网关。
 使用 stdlib urllib，不引入额外依赖。
+网关不可达时自动写入本地 data/usage.jsonl，供 make sync 导入。
 """
 
 import json
 import os
 import urllib.request
 import urllib.error
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).parent.parent
+_LOCAL_LOG = _REPO_ROOT / "data" / "usage.jsonl"
+
+
+def _append_local(record: dict) -> None:
+    _LOCAL_LOG.parent.mkdir(exist_ok=True)
+    with open(_LOCAL_LOG, "a") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 # GLM 定价补充
 _GLM_COST_TABLE: dict[str, tuple[float, float]] = {
@@ -139,6 +150,19 @@ def report_to_gateway(usage_info: dict, project: str) -> None:
         "request_id":    datetime.now().strftime("%Y%m%d-%H%M%S"),
     }
 
+    local_record = {
+        "ts":            datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "provider":      provider,
+        "model":         model,
+        "project":       project,
+        "input_tokens":  in_t,
+        "output_tokens": out_t,
+        "cost_usd":      round(cost, 6),
+        "latency_ms":    0,
+        "status":        "success",
+    }
+    _append_local(local_record)
+
     url  = GATEWAY_URL.rstrip("/") + "/api/usage/log"
     data = json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json"}
@@ -156,6 +180,6 @@ def report_to_gateway(usage_info: dict, project: str) -> None:
             print(f"  [token-mgmt] 已上报 {result.get('total_tokens', 0):,} tokens "
                   f"({provider}/{model}) → {project}")
     except urllib.error.URLError as e:
-        print(f"  [token-mgmt] 上报失败（网关未启动？）: {e.reason}")
+        print(f"  [token-mgmt] 网关离线，已写入本地日志: {e.reason}")
     except Exception as e:
-        print(f"  [token-mgmt] 上报失败: {e}")
+        print(f"  [token-mgmt] 网关上报失败，已写入本地日志: {e}")

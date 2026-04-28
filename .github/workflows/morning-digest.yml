@@ -30,7 +30,20 @@ jobs:
           GATEWAY_URL:        https://gateway.asksidra.com/v1
           GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
           VOLCENGINE_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
+          CHANNEL_NAME:       digest-hub/ai-info
         run: node channels/ai-info/main.js
+
+      - name: 提交 usage 日志
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/usage.jsonl 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: log AI usage [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break || sleep $((i * 3))
+          done
 
   general-news:
     name: 科技财经速读
@@ -56,7 +69,20 @@ jobs:
           GATEWAY_URL:        https://gateway.asksidra.com/v1
           GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
           VOLCENGINE_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
+          CHANNEL_NAME:       digest-hub/general-news
         run: python channels/general-news/main.py
+
+      - name: 提交 usage 日志
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/usage.jsonl 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: log AI usage [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break || sleep $((i * 3))
+          done
 
   investment:
     name: 投资情报
@@ -82,4 +108,17 @@ jobs:
           GATEWAY_URL:        https://gateway.asksidra.com/v1
           GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
           VOLCENGINE_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
+          CHANNEL_NAME:       digest-hub/investment
         run: python channels/investment/main.py
+
+      - name: 提交 usage 日志
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/usage.jsonl 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: log AI usage [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break || sleep $((i * 3))
+          done
