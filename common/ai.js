@@ -32,15 +32,15 @@ function _appendLocal({ provider, model, response, project = '' }) {
   } catch (_) { /* 日志写入失败不中断主流程 */ }
 }
 
-// Groq 主力（qwen-qwq-32b，免费，质量 9.0，中文 9.0）
+// Groq 主力（默认 qwen-qwq-32b，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
 const GROQ_URL   = 'https://api.groq.com/openai/v1';
 const GROQ_KEY   = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = 'qwen-qwq-32b';
+const GROQ_MODEL = process.env.PRIMARY_MODEL || 'qwen-qwq-32b';
 
-// 智谱 GLM 兜底（glm-4.7-flash，永久免费无上限）
+// 智谱 GLM 兜底（默认 glm-4.7-flash，可通过 GitHub Variable FALLBACK_MODEL 覆盖）
 const ZHIPU_URL   = 'https://open.bigmodel.cn/api/paas/v4';
 const ZHIPU_KEY   = process.env.ZHIPU_API_KEY || '';
-const ZHIPU_MODEL = 'glm-4.7-flash';
+const ZHIPU_MODEL = process.env.FALLBACK_MODEL || 'glm-4.7-flash';
 
 /**
  * 调用 LLM，返回 { response, backend }。

@@ -27,4 +27,6 @@ jobs:
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
           GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
           ZHIPU_API_KEY:      ${{ secrets.ZHIPU_API_KEY }}
+          PRIMARY_MODEL:      ${{ vars.PRIMARY_MODEL }}
+          FALLBACK_MODEL:     ${{ vars.FALLBACK_MODEL }}
         run: python channels/product-radar/main_weekly.py

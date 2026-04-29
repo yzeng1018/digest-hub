@@ -13,13 +13,13 @@ from collections.abc import Callable
 import httpx
 from openai import OpenAI
 
-# Groq 主力（qwen-qwq-32b，免费，质量 9.0，中文 9.0）
+# Groq 主力（默认 qwen-qwq-32b，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
 GROQ_URL   = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "qwen-qwq-32b"
+GROQ_MODEL = os.environ.get("PRIMARY_MODEL", "qwen-qwq-32b")
 
-# 智谱 GLM 兜底（glm-4.7-flash，永久免费无上限）
+# 智谱 GLM 兜底（默认 glm-4.7-flash，可通过 GitHub Variable FALLBACK_MODEL 覆盖）
 ZHIPU_URL   = "https://open.bigmodel.cn/api/paas/v4"
-ZHIPU_MODEL = "glm-4.7-flash"
+ZHIPU_MODEL = os.environ.get("FALLBACK_MODEL", "glm-4.7-flash")
 
 # 模块级 usage 累计器，每次 score_articles 调用前重置
 _usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
