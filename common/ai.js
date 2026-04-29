@@ -32,16 +32,15 @@ function _appendLocal({ provider, model, response, project = '' }) {
   } catch (_) { /* 日志写入失败不中断主流程 */ }
 }
 
-const GATEWAY_URL     = process.env.GATEWAY_URL     || 'http://localhost:8000/v1';
-const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || 'dummy';
+// Groq 主力（qwen-qwq-32b，免费，质量 9.0，中文 9.0）
+const GROQ_URL   = 'https://api.groq.com/openai/v1';
+const GROQ_KEY   = process.env.GROQ_API_KEY || '';
+const GROQ_MODEL = 'qwen-qwq-32b';
 
-const VOLCENGINE_URL   = 'https://ark.cn-beijing.volces.com/api/v3';
-const VOLCENGINE_KEY   = process.env.VOLCENGINE_API_KEY || '';
-const VOLCENGINE_MODEL = 'ep-20260323110232-cjr59'; // 豆包 Lite，每日 200万 tokens 免费
-
-const QWEN_URL   = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
-const QWEN_KEY   = process.env.QWEN_API_KEY || '';
-const QWEN_MODEL = 'qwen-max';
+// 智谱 GLM 兜底（glm-4.7-flash，永久免费无上限）
+const ZHIPU_URL   = 'https://open.bigmodel.cn/api/paas/v4';
+const ZHIPU_KEY   = process.env.ZHIPU_API_KEY || '';
+const ZHIPU_MODEL = 'glm-4.7-flash';
 
 /**
  * 调用 LLM，返回 { response, backend }。
@@ -53,34 +52,24 @@ const QWEN_MODEL = 'qwen-max';
  * @returns {Promise<{response: object, backend: string}>}
  */
 export async function callAI(messages, maxTokens = 4096, gatewayTier = 'free') {
-  // 1. gateway
-  try {
-    const c = new OpenAI({ baseURL: GATEWAY_URL, apiKey: GATEWAY_API_KEY });
-    const r = await c.chat.completions.create({ model: gatewayTier, messages, max_tokens: maxTokens });
-    _appendLocal({ provider: 'gateway', model: gatewayTier, response: r });
-    return { response: r, backend: 'gateway' };
-  } catch (err) {
-    console.log(`  [WARN] gateway 不可用(${err.status || err.code})，切换到火山方舟…`);
-  }
-
-  // 2. 火山方舟
-  if (VOLCENGINE_KEY) {
+  // 1. Groq qwen-qwq-32b（免费，质量 9.0，中文 9.0）
+  if (GROQ_KEY) {
     try {
-      const c = new OpenAI({ baseURL: VOLCENGINE_URL, apiKey: VOLCENGINE_KEY });
-      const r = await c.chat.completions.create({ model: VOLCENGINE_MODEL, messages, max_tokens: maxTokens });
-      _appendLocal({ provider: 'volcengine', model: VOLCENGINE_MODEL, response: r });
-      return { response: r, backend: 'volcengine' };
+      const c = new OpenAI({ baseURL: GROQ_URL, apiKey: GROQ_KEY });
+      const r = await c.chat.completions.create({ model: GROQ_MODEL, messages, max_tokens: maxTokens });
+      _appendLocal({ provider: 'groq', model: GROQ_MODEL, response: r });
+      return { response: r, backend: 'groq' };
     } catch (err) {
-      console.log(`  [WARN] 火山方舟不可用(${err.status || err.code})，切换到 Qwen Max…`);
+      console.log(`  [WARN] Groq 不可用(${err.status || err.code})，切换到智谱…`);
     }
   }
 
-  // 3. Qwen Max 最终兜底
-  if (!QWEN_KEY) throw new Error('所有 AI 服务不可用：gateway / 火山方舟均失败，且未配置 QWEN_API_KEY');
-  const c = new OpenAI({ baseURL: QWEN_URL, apiKey: QWEN_KEY });
-  const r = await c.chat.completions.create({ model: QWEN_MODEL, messages, max_tokens: maxTokens });
-  _appendLocal({ provider: 'qwen', model: QWEN_MODEL, response: r });
-  return { response: r, backend: 'qwen' };
+  // 2. 智谱 glm-4.7-flash（永久免费无上限）
+  if (!ZHIPU_KEY) throw new Error('所有 AI 服务不可用：未配置 GROQ_API_KEY 或 ZHIPU_API_KEY');
+  const c = new OpenAI({ baseURL: ZHIPU_URL, apiKey: ZHIPU_KEY });
+  const r = await c.chat.completions.create({ model: ZHIPU_MODEL, messages, max_tokens: maxTokens });
+  _appendLocal({ provider: 'zhipu', model: ZHIPU_MODEL, response: r });
+  return { response: r, backend: 'zhipu' };
 }
 
 /**

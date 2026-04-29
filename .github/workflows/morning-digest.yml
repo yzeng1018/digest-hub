@@ -24,12 +24,10 @@ jobs:
 
       - name: 运行 AI情报 digest
         env:
-          QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
-          GATEWAY_URL:        https://gateway.asksidra.com/v1
-          GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
-          VOLCENGINE_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
+          GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
+          ZHIPU_API_KEY:      ${{ secrets.ZHIPU_API_KEY }}
           CHANNEL_NAME:       digest-hub/ai-info
         run: node channels/ai-info/main.js
 
@@ -63,12 +61,10 @@ jobs:
 
       - name: 运行科技财经 digest
         env:
-          QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
-          GATEWAY_URL:        https://gateway.asksidra.com/v1
-          GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
-          VOLCENGINE_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
+          GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
+          ZHIPU_API_KEY:      ${{ secrets.ZHIPU_API_KEY }}
           CHANNEL_NAME:       digest-hub/general-news
         run: python channels/general-news/main.py
 
@@ -102,12 +98,10 @@ jobs:
 
       - name: 运行投资情报 digest
         env:
-          QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
-          GATEWAY_URL:        https://gateway.asksidra.com/v1
-          GATEWAY_API_KEY:    ${{ secrets.GATEWAY_API_KEY }}
-          VOLCENGINE_API_KEY: ${{ secrets.VOLCENGINE_API_KEY }}
+          GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
+          ZHIPU_API_KEY:      ${{ secrets.ZHIPU_API_KEY }}
           CHANNEL_NAME:       digest-hub/investment
         run: python channels/investment/main.py
 

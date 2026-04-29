@@ -1,0 +1,4 @@
+{"ts":"2026-04-28T07:31:12Z","provider":"volcengine","model":"ep-20260323110232-cjr59","project":"digest-hub/ai-info","input_tokens":12450,"output_tokens":3821,"cost_usd":0.0,"latency_ms":0,"status":"success"}
+{"ts":"2026-04-28T07:33:05Z","provider":"volcengine","model":"ep-20260323110232-cjr59","project":"digest-hub/general-news","input_tokens":18920,"output_tokens":5102,"cost_usd":0.0,"latency_ms":0,"status":"success"}
+{"ts":"2026-04-28T07:35:41Z","provider":"qwen","model":"qwen-max","project":"digest-hub/investment","input_tokens":9830,"output_tokens":2910,"cost_usd":0.00159,"latency_ms":0,"status":"success"}
+{"ts":"2026-04-28T07:36:02Z","provider":"volcengine","model":"ep-20260323110232-cjr59","project":"digest-hub/investment","input_tokens":14200,"output_tokens":4380,"cost_usd":0.0,"latency_ms":0,"status":"success"}

@@ -13,16 +13,13 @@ from collections.abc import Callable
 import httpx
 from openai import OpenAI
 
-GATEWAY_URL     = os.environ.get("GATEWAY_URL", "http://localhost:8000/v1")
-GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "dummy")
+# Groq 主力（qwen-qwq-32b，免费，质量 9.0，中文 9.0）
+GROQ_URL   = "https://api.groq.com/openai/v1"
+GROQ_MODEL = "qwen-qwq-32b"
 
-# 火山方舟兜底（豆包 Lite，每日 200万 tokens 免费）
-VOLCENGINE_URL   = "https://ark.cn-beijing.volces.com/api/v3"
-VOLCENGINE_MODEL = "ep-20260323110232-cjr59"
-
-# Qwen Max 最终兜底
-QWEN_URL   = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-QWEN_MODEL = "qwen-max"
+# 智谱 GLM 兜底（glm-4.7-flash，永久免费无上限）
+ZHIPU_URL   = "https://open.bigmodel.cn/api/paas/v4"
+ZHIPU_MODEL = "glm-4.7-flash"
 
 # 模块级 usage 累计器，每次 score_articles 调用前重置
 _usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -93,41 +90,28 @@ def call_ai(messages: list, **kwargs):
 
 def _complete(messages: list, **kwargs):
     """
-    两级 fallback 链：本地网关(free tier) → GLM-4-Flash 直连。
-    本地网关请求强制绕过系统代理（trust_env=False），避免 http_proxy 拦截 localhost。
-    不走任何付费直连路径——付费路由交由网关的 routing.yaml 统一管理。
+    两级直连链（不经 gateway）：Groq qwen-qwq-32b → 智谱 glm-4.7-flash。
+    两者均永久免费，无需付费 API key。
     """
-    # 1. 本地网关（绕过系统代理）
-    try:
-        c = OpenAI(
-            api_key=GATEWAY_API_KEY,
-            base_url=GATEWAY_URL,
-            http_client=httpx.Client(trust_env=False),
-        )
-        resp = c.chat.completions.create(model="free", messages=messages, **kwargs)
-        return resp, "gateway"
-    except Exception as e:
-        print(f"  [gateway] 不可用 ({type(e).__name__})，切换火山方舟…")
-
-    # 2. 火山方舟（豆包 Lite，每日 200万 tokens 免费）
-    ark_key = os.environ.get("VOLCENGINE_API_KEY", "")
-    if ark_key:
+    # 1. Groq qwen-qwq-32b（免费，质量 9.0，中文 9.0）
+    groq_key = os.environ.get("GROQ_API_KEY", "")
+    if groq_key:
         try:
-            print(f"  [volcengine] 使用 {VOLCENGINE_MODEL}…")
-            c = OpenAI(api_key=ark_key, base_url=VOLCENGINE_URL)
-            resp = c.chat.completions.create(model=VOLCENGINE_MODEL, messages=messages, **kwargs)
-            return resp, "volcengine"
+            print(f"  [groq] 使用 {GROQ_MODEL}…")
+            c = OpenAI(api_key=groq_key, base_url=GROQ_URL)
+            resp = c.chat.completions.create(model=GROQ_MODEL, messages=messages, **kwargs)
+            return resp, "groq"
         except Exception as e:
-            print(f"  [volcengine] 不可用 ({type(e).__name__})，切换 Qwen Max…")
+            print(f"  [groq] 不可用 ({type(e).__name__})，切换智谱…")
 
-    # 3. Qwen Max 最终兜底
-    qwen_key = os.environ.get("QWEN_API_KEY", "")
-    if not qwen_key:
-        raise RuntimeError("所有 AI 服务不可用：gateway / 火山方舟均失败，且未配置 QWEN_API_KEY")
-    print(f"  [qwen] 使用 {QWEN_MODEL} 兜底…")
-    c = OpenAI(api_key=qwen_key, base_url=QWEN_URL)
-    resp = c.chat.completions.create(model=QWEN_MODEL, messages=messages, **kwargs)
-    return resp, "qwen"
+    # 2. 智谱 glm-4.7-flash（永久免费无上限）
+    zhipu_key = os.environ.get("ZHIPU_API_KEY", "")
+    if not zhipu_key:
+        raise RuntimeError("所有 AI 服务不可用：未配置 GROQ_API_KEY 或 ZHIPU_API_KEY")
+    print(f"  [zhipu] 使用 {ZHIPU_MODEL} 兜底…")
+    c = OpenAI(api_key=zhipu_key, base_url=ZHIPU_URL)
+    resp = c.chat.completions.create(model=ZHIPU_MODEL, messages=messages, **kwargs)
+    return resp, "zhipu"
 
 USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
 
