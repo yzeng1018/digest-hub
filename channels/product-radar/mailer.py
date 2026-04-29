@@ -24,7 +24,43 @@ def _category_emoji(category: str) -> str:
     return {"crypto": "🔐", "product": "📦", "ux": "🎨"}.get(category, "📌")
 
 
-def _build_email_html(articles: list[dict], date_str: str) -> str:
+def _perf_color(score: float) -> str:
+    if score >= 8: return "#20c997"
+    if score >= 6: return "#74c0fc"
+    return "#fd7e14"
+
+
+def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
+    if not usage_info or not usage_info.get("model"):
+        return ""
+    model     = usage_info.get("model", "unknown")
+    prompt    = usage_info.get("prompt_tokens", 0)
+    comp      = usage_info.get("completion_tokens", 0)
+    total     = usage_info.get("total_tokens", 0)
+    token_str = f"↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens" if total else "token 数据不可用"
+
+    perf_html = ""
+    if model_metrics and model_metrics.get("perf_score") is not None:
+        ps    = model_metrics["perf_score"]
+        pr    = int(model_metrics.get("parse_rate", 0) * 100)
+        tr    = int(model_metrics.get("translation_rate", 0) * 100)
+        ss    = model_metrics.get("score_spread", 0)
+        color = _perf_color(ps)
+        perf_html = (
+            f'&nbsp;·&nbsp;'
+            f'<span style="color:{color};font-weight:700;">评分 {ps}/10</span>'
+            f'&nbsp;(解析率 {pr}% · 翻译率 {tr}% · 区分度 {ss:.1f}σ)'
+        )
+
+    return (
+        f'<div style="margin-top:10px;padding:6px 14px;background:rgba(255,255,255,0.15);'
+        f'border-radius:8px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">'
+        f'🤖 {model} &nbsp;·&nbsp; {token_str}{perf_html}'
+        f'</div>'
+    )
+
+
+def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | None = None, model_metrics: dict | None = None) -> str:
     rows = ""
     for art in articles:
         sc       = art.get("score", 5)
@@ -135,6 +171,7 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
         产品设计雷达 · 每日速递
       </div>
       <div style="margin-top:6px;font-size:13px;color:rgba(255,255,255,0.8);">{date_str}</div>
+      {_usage_bar(usage_info or {}, model_metrics)}
       <div style="margin-top:12px;">
         <span style="display:inline-block;padding:3px 12px;border-radius:20px;
                      background:rgba(255,255,255,0.2);color:#ffffff;font-size:12px;font-weight:600;">
@@ -177,8 +214,8 @@ def _build_email_html(articles: list[dict], date_str: str) -> str:
     return body
 
 
-def send_digest(articles: list[dict]) -> None:
+def send_digest(articles: list[dict], usage_info: dict | None = None, model_metrics: dict | None = None) -> None:
     date_str = datetime.now().strftime("%Y年%m月%d日")
     subject  = f"产品设计雷达 · {datetime.now().strftime('%m/%d')} · {sum(1 for a in articles if a.get('score',0) >= 8)}条必学"
-    html     = _build_email_html(articles, date_str)
+    html     = _build_email_html(articles, date_str, usage_info, model_metrics)
     send_html(subject, html)
