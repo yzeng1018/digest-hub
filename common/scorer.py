@@ -217,7 +217,7 @@ def score_articles(
             # 记录实际模型名（优先用响应中的）
             if not _usage["model"]:
                 _usage["model"] = getattr(resp, "model", "") or (
-                    "gateway/free" if backend == "gateway" else VOLCENGINE_MODEL
+                    f"{backend}/{GROQ_MODEL}" if backend == "groq" else ZHIPU_MODEL
                 )
             results = _parse_response(resp.choices[0].message.content or "")
             if results:
