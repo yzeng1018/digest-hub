@@ -138,7 +138,7 @@ USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
     "score": 评分数字(1-10),
     "reason_zh": "一句话说明价值（20字以内）",
     "title_zh": "中文标题",
-    "summary_zh": "中文摘要2-3句"
+    "summary_zh": "中文摘要4-6句，充分展开背景、核心内容和价值，不要过于简短"
   }},
   ...
 ]

@@ -27,7 +27,7 @@ function parseResult(text) {
 
 export async function scoreArticles(articles, batchSize = 10) {
   const USER_TEMPLATE = (count, json) =>
-    `请对以下 ${count} 条内容进行评估。\n\n严格按照以下 JSON 格式返回，不要有任何其他文字，不要有 markdown 代码块：\n[\n  {\n    "id": "序号，从0开始",\n    "score": 评分数字(1-10),\n    "reason_zh": "一句话说明价值（20字以内）",\n    "title_zh": "中文标题",\n    "summary_zh": "中文摘要2-3句"\n  }\n]\n\n内容列表：\n${json}`;
+    `请对以下 ${count} 条内容进行评估。\n\n严格按照以下 JSON 格式返回，不要有任何其他文字，不要有 markdown 代码块：\n[\n  {\n    "id": "序号，从0开始",\n    "score": 评分数字(1-10),\n    "reason_zh": "一句话说明价值（20字以内）",\n    "title_zh": "中文标题",\n    "summary_zh": "中文摘要4-6句，充分展开背景、核心内容和价值，不要过于简短"\n  }\n]\n\n内容列表：\n${json}`;
 
   let batchesTotal = 0;
   let batchesParsed = 0;
