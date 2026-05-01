@@ -37,10 +37,10 @@ const OPENROUTER_URL   = 'https://openrouter.ai/api/v1';
 const OPENROUTER_KEY   = process.env.OPENROUTER_API_KEY || '';
 const OPENROUTER_MODEL = process.env.PRIMARY_MODEL || 'qwen/qwen3-235b-a22b:free';
 
-// Groq 备用（qwen-qwq-32b，快速推理）
+// Groq 备用（llama-3.3-70b-versatile，稳定可用）
 const GROQ_URL   = 'https://api.groq.com/openai/v1';
 const GROQ_KEY   = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = 'qwen-qwq-32b';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 // 智谱 GLM 兜底（默认 glm-4.7-flash，永久免费）
 const ZHIPU_URL   = 'https://open.bigmodel.cn/api/paas/v4';

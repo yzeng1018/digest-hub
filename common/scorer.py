@@ -8,6 +8,7 @@ import json
 import math
 import os
 import re
+import time
 from collections.abc import Callable
 
 import httpx
@@ -17,9 +18,9 @@ from openai import OpenAI
 OPENROUTER_URL   = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = os.environ.get("PRIMARY_MODEL", "qwen/qwen3-235b-a22b:free")
 
-# Groq 备用（qwen-qwq-32b，快速推理）
+# Groq 备用（llama-3.3-70b-versatile，稳定可用）
 GROQ_URL   = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "qwen-qwq-32b"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 # 智谱 GLM 兜底（默认 glm-4.7-flash，永久免费）
 ZHIPU_URL   = "https://open.bigmodel.cn/api/paas/v4"
@@ -197,6 +198,8 @@ def score_articles(
         summary_fn = _default_summary_fn
 
     for batch_start in range(0, len(articles), batch_size):
+        if batch_start > 0:
+            time.sleep(2)  # 避免智谱 429 速率限制
         batch = articles[batch_start: batch_start + batch_size]
         print(f"  评分 [{batch_start + 1}–{batch_start + len(batch)}] …")
 
