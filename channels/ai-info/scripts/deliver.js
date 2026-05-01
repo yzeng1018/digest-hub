@@ -5,29 +5,38 @@ const RECIPIENT   = process.env.DIGEST_RECIPIENT   || 'yzeng1018@gmail.com';
 const SENDER      = 'yzeng1018@gmail.com';
 
 function scoreColor(score) {
-  if (score >= 9) return '#e03131';
-  if (score >= 6) return '#e67700';
-  return '#1971c2';
+  if (score >= 8) return '#ff6b6b';
+  if (score >= 6) return '#ffa94d';
+  return '#74c0fc';
 }
 
-function usageBar(tokenUsage) {
+function usageBar(tokenUsage, tokenMetrics = {}) {
   if (!tokenUsage || !tokenUsage.model) return '';
-  const model  = tokenUsage.model;
-  const total  = tokenUsage.total || 0;
+  const model = tokenUsage.model;
+  const total = tokenUsage.total || 0;
   const tokenStr = total
     ? `↑ ${(tokenUsage.prompt||0).toLocaleString()} &nbsp;↓ ${(tokenUsage.completion||0).toLocaleString()} &nbsp;共 ${total.toLocaleString()} tokens`
     : 'token 数据不可用';
-  return `<div style="margin-top:10px;padding:5px 14px;background:rgba(255,255,255,0.15);border-radius:20px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">🤖 ${model} &nbsp;·&nbsp; ${tokenStr}</div>`;
+  let perfHtml = '';
+  if (tokenMetrics && tokenMetrics.perfScore !== undefined && tokenMetrics.perfScore > 0) {
+    const ps    = tokenMetrics.perfScore;
+    const pr    = Math.round((tokenMetrics.parseRate || 0) * 100);
+    const tr    = Math.round((tokenMetrics.translationRate || 0) * 100);
+    const ss    = (tokenMetrics.scoreSpread || 0).toFixed(1);
+    const color = ps >= 8 ? '#69db7c' : ps >= 6 ? '#ffa94d' : '#ff6b6b';
+    perfHtml = ` &nbsp;·&nbsp; <span style="color:${color};font-weight:700;">评分 ${ps}/10</span> (解析率 ${pr}% · 翻译率 ${tr}% · 区分度 ${ss}σ)`;
+  }
+  return `<div style="margin-top:10px;padding:6px 14px;background:rgba(255,255,255,0.15);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">🤖 ${model} &nbsp;·&nbsp; ${tokenStr}${perfHtml}</div>`;
 }
 
-function buildHtml(articles, dateStr, tokenUsage = {}) {
-  const mustCount = articles.filter(a => a.score >= 9).length;
-  const impCount  = articles.filter(a => a.score >= 6 && a.score < 9).length;
+function buildHtml(articles, dateStr, tokenUsage = {}, tokenMetrics = {}) {
+  const mustCount = articles.filter(a => a.score >= 8).length;
+  const impCount  = articles.filter(a => a.score >= 6 && a.score < 8).length;
 
   const rows = articles.map(art => {
     const sc     = art.score || 5;
     const color  = scoreColor(sc);
-    const label  = sc >= 9 ? '必读' : sc >= 6 ? '重要' : '一般';
+    const label  = sc >= 8 ? '必读' : sc >= 6 ? '重要' : '一般';
     const titleZh = art.title_zh || art.title;
     const titleEn = art.lang === 'en' && art.title !== titleZh
       ? `<div style="font-size:12px;color:#868e96;margin-top:3px;">${art.title}</div>` : '';
@@ -39,14 +48,14 @@ function buildHtml(articles, dateStr, tokenUsage = {}) {
 
     return `
 <tr>
-  <td style="padding:14px 18px;border-bottom:1px solid #dee2e6;">
+  <td style="padding:16px 20px;border-bottom:1px solid #dee2e6;">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td width="44" valign="top" style="padding-right:10px;">
-        <div style="width:40px;height:40px;border-radius:8px;background:${color}22;text-align:center;
-                    line-height:40px;font-size:17px;font-weight:800;color:${color};">${sc}</div>
+      <td width="46" valign="top" style="padding-right:12px;">
+        <div style="width:42px;height:42px;border-radius:8px;background:${color}22;text-align:center;
+                    line-height:42px;font-size:18px;font-weight:800;color:${color};">${sc}</div>
       </td>
       <td valign="top">
-        <div style="font-size:14px;font-weight:600;color:#212529;line-height:1.4;">
+        <div style="font-size:15px;font-weight:600;color:#212529;line-height:1.4;">
           <a href="${art.url}" style="color:#212529;text-decoration:none;">${titleZh}</a>
         </div>
         ${titleEn}
@@ -68,12 +77,12 @@ function buildHtml(articles, dateStr, tokenUsage = {}) {
 <body style="margin:0;padding:0;background:#f8f9fa;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fa;padding:20px 0;">
 <tr><td align="center">
-<table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;">
-  <tr><td style="background:linear-gradient(135deg,#228be6,#1971c2);border-radius:12px 12px 0 0;padding:24px 20px;text-align:center;">
-    <div style="font-size:20px;font-weight:800;color:#fff;">每日 AI 情报</div>
-    <div style="margin-top:4px;font-size:12px;color:rgba(255,255,255,0.8);">${dateStr}</div>
-    ${usageBar(tokenUsage)}
-    <div style="margin-top:10px;">
+<table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;">
+  <tr><td style="background:linear-gradient(135deg,#228be6,#1971c2);border-radius:12px 12px 0 0;padding:28px 24px;text-align:center;">
+    <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:0.5px;">每日 AI 情报</div>
+    <div style="margin-top:6px;font-size:13px;color:rgba(255,255,255,0.8);">${dateStr}</div>
+    ${usageBar(tokenUsage, tokenMetrics)}
+    <div style="margin-top:12px;">
       <span style="display:inline-block;padding:2px 10px;border-radius:20px;background:rgba(255,107,107,0.25);color:#ff6b6b;font-size:12px;font-weight:600;">🔥 必读 ${mustCount}</span>
       <span style="display:inline-block;padding:2px 10px;border-radius:20px;background:rgba(255,169,77,0.25);color:#ffa94d;font-size:12px;font-weight:600;margin-left:8px;">⚡ 重要 ${impCount}</span>
       <span style="display:inline-block;padding:2px 10px;border-radius:20px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);font-size:12px;margin-left:8px;">共 ${articles.length} 条</span>
@@ -92,7 +101,7 @@ function buildHtml(articles, dateStr, tokenUsage = {}) {
 </body></html>`;
 }
 
-export async function deliver(markdown, articles, dateStr, tokenUsage = {}) {
+export async function deliver(markdown, articles, dateStr, tokenUsage = {}, tokenMetrics = {}) {
   if (!GMAIL_PASS) {
     console.log('[WARN] GMAIL_APP_PASSWORD 未设置，跳过邮件');
     return;
@@ -114,7 +123,7 @@ export async function deliver(markdown, articles, dateStr, tokenUsage = {}) {
   });
 
   const subject = `每日 AI 情报 · ${dateStr}`;
-  const html = buildHtml(articles, dateStr, tokenUsage);
+  const html = buildHtml(articles, dateStr, tokenUsage, tokenMetrics);
 
   try {
     await transporter.sendMail({ from: SENDER, to: RECIPIENT, subject, html });

@@ -9,25 +9,21 @@ from common.mailer import send_html
 
 
 def _score_color(score: int) -> str:
-    if score >= 8: return "#20c997"
-    if score >= 6: return "#74c0fc"
-    return "#adb5bd"
+    if score >= 8: return "#ff6b6b"
+    if score >= 6: return "#ffa94d"
+    return "#74c0fc"
 
 
 def _score_label(score: int) -> str:
-    if score >= 8: return "必学"
-    if score >= 6: return "值得看"
-    return "参考"
-
-
-def _category_emoji(category: str) -> str:
-    return {"crypto": "🔐", "product": "📦", "ux": "🎨"}.get(category, "📌")
+    if score >= 8: return "必读"
+    if score >= 6: return "重要"
+    return "一般"
 
 
 def _perf_color(score: float) -> str:
-    if score >= 8: return "#20c997"
-    if score >= 6: return "#74c0fc"
-    return "#fd7e14"
+    if score >= 8:  return "#69db7c"
+    if score >= 6:  return "#ffa94d"
+    return "#ff6b6b"
 
 
 def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
@@ -66,7 +62,6 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
         sc       = art.get("score", 5)
         color    = _score_color(sc)
         label    = _score_label(sc)
-        cat_emoji = _category_emoji(art.get("category", ""))
         title_zh = art.get("title_zh") or art.get("title", "")
         title_en = art.get("title", "") if art.get("lang") == "en" else ""
         summary  = art.get("summary_zh") or art.get("summary", "")
@@ -95,7 +90,7 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
         )
         insight_row = (
             f'<div style="margin-top:8px;padding:7px 12px;background:#e6fcf5;'
-            f'border-left:3px solid #20c997;border-radius:0 5px 5px 0;'
+            f'border-left:3px solid #099268;border-radius:0 5px 5px 0;'
             f'font-size:12px;color:#0b7a63;line-height:1.6;">💡 <strong>产品洞察：</strong>{insight}</div>'
             if insight else ""
         )
@@ -120,14 +115,14 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
   <td style="padding:18px 20px;border-bottom:1px solid #dee2e6;">
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
-        <td width="44" valign="top" style="padding-right:12px;">
-          <div style="width:38px;height:38px;border-radius:8px;
-                      background:{color}22;text-align:center;line-height:38px;
-                      font-size:16px;font-weight:800;color:{color};">{sc}</div>
+        <td width="46" valign="top" style="padding-right:12px;">
+          <div style="width:42px;height:42px;border-radius:8px;
+                      background:{color}22;text-align:center;line-height:42px;
+                      font-size:18px;font-weight:800;color:{color};">{sc}</div>
         </td>
         <td valign="top">
-          <div style="font-size:14px;font-weight:600;color:#212529;line-height:1.4;">
-            {cat_emoji} <a href="{url}" style="color:#212529;text-decoration:none;">{title_zh}</a>
+          <div style="font-size:15px;font-weight:600;color:#212529;line-height:1.4;">
+            <a href="{url}" style="color:#212529;text-decoration:none;">{title_zh}</a>
           </div>
           {title_en_row}
           <div style="margin-top:5px;">
@@ -174,13 +169,13 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
       {_usage_bar(usage_info or {}, model_metrics)}
       <div style="margin-top:12px;">
         <span style="display:inline-block;padding:3px 12px;border-radius:20px;
-                     background:rgba(255,255,255,0.2);color:#ffffff;font-size:12px;font-weight:600;">
-          ⚡ 必学 {must_count}
+                     background:rgba(255,107,107,0.25);color:#ff6b6b;font-size:12px;font-weight:600;">
+          🔥 必读 {must_count}
         </span>
         <span style="display:inline-block;padding:3px 12px;border-radius:20px;
-                     background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.9);
-                     font-size:12px;margin-left:8px;">
-          👀 值得看 {imp_count}
+                     background:rgba(255,169,77,0.25);color:#ffa94d;
+                     font-size:12px;font-weight:600;margin-left:8px;">
+          ⚡ 重要 {imp_count}
         </span>
         <span style="display:inline-block;padding:3px 12px;border-radius:20px;
                      background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);
@@ -216,6 +211,6 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
 
 def send_digest(articles: list[dict], usage_info: dict | None = None, model_metrics: dict | None = None) -> None:
     date_str = datetime.now().strftime("%Y年%m月%d日")
-    subject  = f"产品设计雷达 · {datetime.now().strftime('%m/%d')} · {sum(1 for a in articles if a.get('score',0) >= 8)}条必学"
+    subject  = f"产品设计雷达 · {datetime.now().strftime('%Y-%m-%d')} · {sum(1 for a in articles if a.get('score',0) >= 8)}条必读"
     html     = _build_email_html(articles, date_str, usage_info, model_metrics)
     send_html(subject, html)

@@ -13,7 +13,7 @@ import { fetchTweets } from './scripts/fetchTweets.js';
 import { fetchBlogs }  from './scripts/fetchBlogs.js';
 import { fetchPodcasts } from './scripts/fetchPodcasts.js';
 import { deduplicate } from './scripts/dedup.js';
-import { scoreArticles, reportUsage, tokenUsage } from './scripts/score.js';
+import { scoreArticles, reportUsage, tokenUsage, tokenMetrics } from './scripts/score.js';
 import { enrichArticles } from './scripts/enrich.js';
 import { render }         from './scripts/render.js';
 import { deliver }        from './scripts/deliver.js';
@@ -79,7 +79,7 @@ async function main() {
   console.log(`\nMarkdown 已保存 → ${outputPath}`);
 
   if (!args['no-email']) {
-    await deliver(markdown, articles, dateStr, args['no-score'] ? {} : tokenUsage);
+    await deliver(markdown, articles, dateStr, args['no-score'] ? {} : tokenUsage, args['no-score'] ? {} : tokenMetrics);
   }
 
   const mustReads = articles.filter(a => (a.score || 0) >= cfg.scoreMustRead).length;
