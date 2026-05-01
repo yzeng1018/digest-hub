@@ -25,6 +25,7 @@ export async function scoreArticles(articles, batchSize = 10) {
   let batchesParsed = 0;
 
   for (let start = 0; start < articles.length; start += batchSize) {
+    if (start > 0) await new Promise(r => setTimeout(r, 2000));  // 防智谱 429
     const batch = articles.slice(start, start + batchSize);
     console.log(`  评分 [${start + 1}–${start + batch.length}]…`);
 
