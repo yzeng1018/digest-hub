@@ -13,11 +13,15 @@ from collections.abc import Callable
 import httpx
 from openai import OpenAI
 
-# Groq 主力（默认 qwen-qwq-32b，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
-GROQ_URL   = "https://api.groq.com/openai/v1"
-GROQ_MODEL = os.environ.get("PRIMARY_MODEL", "qwen-qwq-32b")
+# OpenRouter 主力（默认 qwen3-235b，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
+OPENROUTER_URL   = "https://openrouter.ai/api/v1"
+OPENROUTER_MODEL = os.environ.get("PRIMARY_MODEL", "qwen/qwen3-235b-a22b:free")
 
-# 智谱 GLM 兜底（默认 glm-4.7-flash，可通过 GitHub Variable FALLBACK_MODEL 覆盖）
+# Groq 备用（qwen-qwq-32b，快速推理）
+GROQ_URL   = "https://api.groq.com/openai/v1"
+GROQ_MODEL = "qwen-qwq-32b"
+
+# 智谱 GLM 兜底（默认 glm-4.7-flash，永久免费）
 ZHIPU_URL   = "https://open.bigmodel.cn/api/paas/v4"
 ZHIPU_MODEL = os.environ.get("FALLBACK_MODEL", "glm-4.7-flash")
 
@@ -90,10 +94,21 @@ def call_ai(messages: list, **kwargs):
 
 def _complete(messages: list, **kwargs):
     """
-    两级直连链（不经 gateway）：Groq qwen-qwq-32b → 智谱 glm-4.7-flash。
-    两者均永久免费，无需付费 API key。
+    三级直连链：OpenRouter qwen3-235b → Groq qwen-qwq-32b → 智谱 glm-4.7-flash。
+    均为永久免费，质量依次降级。
     """
-    # 1. Groq qwen-qwq-32b（免费，质量 9.0，中文 9.0）
+    # 1. OpenRouter qwen3-235b-a22b（最强免费，质量 9.0+，中文 9.0）
+    or_key = os.environ.get("OPENROUTER_API_KEY", "")
+    if or_key:
+        try:
+            print(f"  [openrouter] 使用 {OPENROUTER_MODEL}…")
+            c = OpenAI(api_key=or_key, base_url=OPENROUTER_URL)
+            resp = c.chat.completions.create(model=OPENROUTER_MODEL, messages=messages, **kwargs)
+            return resp, "openrouter"
+        except Exception as e:
+            print(f"  [openrouter] 不可用 ({type(e).__name__})，切换 Groq…")
+
+    # 2. Groq qwen-qwq-32b（快速推理，免费）
     groq_key = os.environ.get("GROQ_API_KEY", "")
     if groq_key:
         try:
@@ -104,10 +119,10 @@ def _complete(messages: list, **kwargs):
         except Exception as e:
             print(f"  [groq] 不可用 ({type(e).__name__})，切换智谱…")
 
-    # 2. 智谱 glm-4.7-flash（永久免费无上限）
+    # 3. 智谱 glm-4.7-flash（永久免费兜底）
     zhipu_key = os.environ.get("ZHIPU_API_KEY", "")
     if not zhipu_key:
-        raise RuntimeError("所有 AI 服务不可用：未配置 GROQ_API_KEY 或 ZHIPU_API_KEY")
+        raise RuntimeError("所有 AI 服务不可用：未配置 OPENROUTER_API_KEY、GROQ_API_KEY 或 ZHIPU_API_KEY")
     print(f"  [zhipu] 使用 {ZHIPU_MODEL} 兜底…")
     c = OpenAI(api_key=zhipu_key, base_url=ZHIPU_URL)
     resp = c.chat.completions.create(model=ZHIPU_MODEL, messages=messages, **kwargs)
@@ -217,7 +232,9 @@ def score_articles(
             # 记录实际模型名（优先用响应中的）
             if not _usage["model"]:
                 _usage["model"] = getattr(resp, "model", "") or (
-                    f"{backend}/{GROQ_MODEL}" if backend == "groq" else ZHIPU_MODEL
+                    f"openrouter/{OPENROUTER_MODEL}" if backend == "openrouter"
+                    else f"groq/{GROQ_MODEL}" if backend == "groq"
+                    else ZHIPU_MODEL
                 )
             results = _parse_response(resp.choices[0].message.content or "")
             if results:

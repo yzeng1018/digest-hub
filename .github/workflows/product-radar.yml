@@ -25,6 +25,7 @@ jobs:
         env:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
           ZHIPU_API_KEY:      ${{ secrets.ZHIPU_API_KEY }}
           PRIMARY_MODEL:      ${{ vars.PRIMARY_MODEL }}
