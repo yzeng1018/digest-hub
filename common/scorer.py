@@ -14,13 +14,9 @@ from collections.abc import Callable
 import httpx
 from openai import OpenAI
 
-# OpenRouter 主力（默认 qwen3-235b，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
-OPENROUTER_URL   = "https://openrouter.ai/api/v1"
-OPENROUTER_MODEL = os.environ.get("PRIMARY_MODEL", "qwen/qwen3-235b-a22b:free")
-
-# Groq 备用（llama-3.3-70b-versatile，稳定可用）
-GROQ_URL   = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+# Gemini 主力（默认 gemini-2.5-flash，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
+GEMINI_URL   = "https://generativelanguage.googleapis.com/v1beta/openai"
+GEMINI_MODEL = os.environ.get("PRIMARY_MODEL", "gemini-2.5-flash")
 
 # 智谱 GLM 兜底（默认 glm-4.7-flash，永久免费）
 ZHIPU_URL   = "https://open.bigmodel.cn/api/paas/v4"
@@ -95,35 +91,23 @@ def call_ai(messages: list, **kwargs):
 
 def _complete(messages: list, **kwargs):
     """
-    三级直连链：OpenRouter qwen3-235b → Groq qwen-qwq-32b → 智谱 glm-4.7-flash。
-    均为永久免费，质量依次降级。
+    两级直连链：Gemini 2.5 Flash → 智谱 glm-4.7-flash。
     """
-    # 1. OpenRouter qwen3-235b-a22b（最强免费，质量 9.0+，中文 9.0）
-    or_key = os.environ.get("OPENROUTER_API_KEY", "")
-    if or_key:
+    # 1. Gemini 2.5 Flash（高质量，免费 1M tokens/天）
+    gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    if gemini_key:
         try:
-            print(f"  [openrouter] 使用 {OPENROUTER_MODEL}…")
-            c = OpenAI(api_key=or_key, base_url=OPENROUTER_URL)
-            resp = c.chat.completions.create(model=OPENROUTER_MODEL, messages=messages, **kwargs)
-            return resp, "openrouter"
+            print(f"  [gemini] 使用 {GEMINI_MODEL}…")
+            c = OpenAI(api_key=gemini_key, base_url=GEMINI_URL)
+            resp = c.chat.completions.create(model=GEMINI_MODEL, messages=messages, **kwargs)
+            return resp, "gemini"
         except Exception as e:
-            print(f"  [openrouter] 不可用 ({type(e).__name__})，切换 Groq…")
+            print(f"  [gemini] 不可用 ({type(e).__name__})，切换智谱…")
 
-    # 2. Groq qwen-qwq-32b（快速推理，免费）
-    groq_key = os.environ.get("GROQ_API_KEY", "")
-    if groq_key:
-        try:
-            print(f"  [groq] 使用 {GROQ_MODEL}…")
-            c = OpenAI(api_key=groq_key, base_url=GROQ_URL)
-            resp = c.chat.completions.create(model=GROQ_MODEL, messages=messages, **kwargs)
-            return resp, "groq"
-        except Exception as e:
-            print(f"  [groq] 不可用 ({type(e).__name__})，切换智谱…")
-
-    # 3. 智谱 glm-4.7-flash（永久免费兜底）
+    # 2. 智谱 glm-4.7-flash（永久免费兜底）
     zhipu_key = os.environ.get("ZHIPU_API_KEY", "")
     if not zhipu_key:
-        raise RuntimeError("所有 AI 服务不可用：未配置 OPENROUTER_API_KEY、GROQ_API_KEY 或 ZHIPU_API_KEY")
+        raise RuntimeError("所有 AI 服务不可用：未配置 GEMINI_API_KEY 或 ZHIPU_API_KEY")
     print(f"  [zhipu] 使用 {ZHIPU_MODEL} 兜底…")
     c = OpenAI(api_key=zhipu_key, base_url=ZHIPU_URL)
     resp = c.chat.completions.create(model=ZHIPU_MODEL, messages=messages, **kwargs)
@@ -235,9 +219,7 @@ def score_articles(
             # 记录实际模型名（优先用响应中的）
             if not _usage["model"]:
                 _usage["model"] = getattr(resp, "model", "") or (
-                    f"openrouter/{OPENROUTER_MODEL}" if backend == "openrouter"
-                    else f"groq/{GROQ_MODEL}" if backend == "groq"
-                    else ZHIPU_MODEL
+                    GEMINI_MODEL if backend == "gemini" else ZHIPU_MODEL
                 )
             results = _parse_response(resp.choices[0].message.content or "")
             if results:

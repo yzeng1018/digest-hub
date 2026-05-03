@@ -32,15 +32,10 @@ function _appendLocal({ provider, model, response, project = '' }) {
   } catch (_) { /* 日志写入失败不中断主流程 */ }
 }
 
-// OpenRouter 主力（默认 qwen3-235b，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
-const OPENROUTER_URL   = 'https://openrouter.ai/api/v1';
-const OPENROUTER_KEY   = process.env.OPENROUTER_API_KEY || '';
-const OPENROUTER_MODEL = process.env.PRIMARY_MODEL || 'qwen/qwen3-235b-a22b:free';
-
-// Groq 备用（llama-3.3-70b-versatile，稳定可用）
-const GROQ_URL   = 'https://api.groq.com/openai/v1';
-const GROQ_KEY   = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+// Gemini 主力（默认 gemini-2.5-flash，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
+const GEMINI_URL   = 'https://generativelanguage.googleapis.com/v1beta/openai';
+const GEMINI_KEY   = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODEL = process.env.PRIMARY_MODEL || 'gemini-2.5-flash';
 
 // 智谱 GLM 兜底（默认 glm-4.7-flash，永久免费）
 const ZHIPU_URL   = 'https://open.bigmodel.cn/api/paas/v4';
@@ -57,32 +52,20 @@ const ZHIPU_MODEL = process.env.FALLBACK_MODEL || 'glm-4.7-flash';
  * @returns {Promise<{response: object, backend: string}>}
  */
 export async function callAI(messages, maxTokens = 4096, gatewayTier = 'free') {
-  // 1. OpenRouter qwen3-235b（最强免费，质量 9.0+，中文 9.0）
-  if (OPENROUTER_KEY) {
+  // 1. Gemini 2.5 Flash（高质量，免费 1M tokens/天）
+  if (GEMINI_KEY) {
     try {
-      const c = new OpenAI({ baseURL: OPENROUTER_URL, apiKey: OPENROUTER_KEY });
-      const r = await c.chat.completions.create({ model: OPENROUTER_MODEL, messages, max_tokens: maxTokens });
-      _appendLocal({ provider: 'openrouter', model: OPENROUTER_MODEL, response: r });
-      return { response: r, backend: 'openrouter' };
+      const c = new OpenAI({ baseURL: GEMINI_URL, apiKey: GEMINI_KEY });
+      const r = await c.chat.completions.create({ model: GEMINI_MODEL, messages, max_tokens: maxTokens });
+      _appendLocal({ provider: 'gemini', model: GEMINI_MODEL, response: r });
+      return { response: r, backend: 'gemini' };
     } catch (err) {
-      console.log(`  [WARN] OpenRouter 不可用(${err.status || err.code})，切换到 Groq…`);
+      console.log(`  [WARN] Gemini 不可用(${err.status || err.code})，切换到智谱…`);
     }
   }
 
-  // 2. Groq qwen-qwq-32b（快速推理，免费）
-  if (GROQ_KEY) {
-    try {
-      const c = new OpenAI({ baseURL: GROQ_URL, apiKey: GROQ_KEY });
-      const r = await c.chat.completions.create({ model: GROQ_MODEL, messages, max_tokens: maxTokens });
-      _appendLocal({ provider: 'groq', model: GROQ_MODEL, response: r });
-      return { response: r, backend: 'groq' };
-    } catch (err) {
-      console.log(`  [WARN] Groq 不可用(${err.status || err.code})，切换到智谱…`);
-    }
-  }
-
-  // 3. 智谱 glm-4.7-flash（永久免费兜底）
-  if (!ZHIPU_KEY) throw new Error('所有 AI 服务不可用：未配置 OPENROUTER_API_KEY、GROQ_API_KEY 或 ZHIPU_API_KEY');
+  // 2. 智谱 glm-4.7-flash（永久免费兜底）
+  if (!ZHIPU_KEY) throw new Error('所有 AI 服务不可用：未配置 GEMINI_API_KEY 或 ZHIPU_API_KEY');
   const c = new OpenAI({ baseURL: ZHIPU_URL, apiKey: ZHIPU_KEY });
   const r = await c.chat.completions.create({ model: ZHIPU_MODEL, messages, max_tokens: maxTokens });
   _appendLocal({ provider: 'zhipu', model: ZHIPU_MODEL, response: r });
