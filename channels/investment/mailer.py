@@ -124,7 +124,7 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
                          border:1px solid #dee2e6;margin-left:4px;">{source}</span>
           </div>
           <div style="margin-top:8px;font-size:13px;color:#495057;line-height:1.65;">{summary}</div>
-          {"" if not (art.get("lang") == "en" and summary_zh and summary_en) else f'<div style="margin-top:5px;font-size:12px;color:#868e96;font-style:italic;line-height:1.5;">{summary_en}</div>'}
+          {"" if not (art.get("lang") == "en" and summary_zh and summary_en and summary_zh != summary_en) else f'<div style="margin-top:5px;font-size:12px;color:#868e96;font-style:italic;line-height:1.5;">{summary_en}</div>'}
           {extra}
         </td>
       </tr>
