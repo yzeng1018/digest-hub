@@ -102,7 +102,7 @@ def _complete(messages: list, **kwargs):
             resp = c.chat.completions.create(model=DEEPSEEK_MODEL, messages=messages, **kwargs)
             return resp, "deepseek"
         except Exception as e:
-            print(f"  [deepseek] 不可用 ({type(e).__name__})，切换智谱…")
+            print(f"  [deepseek] 不可用 ({type(e).__name__}: {e})，切换智谱…")
 
     # 2. 智谱 glm-4.7-flash（永久免费兜底）
     zhipu_key = os.environ.get("ZHIPU_API_KEY", "")
