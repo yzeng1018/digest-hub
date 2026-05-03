@@ -14,9 +14,9 @@ from collections.abc import Callable
 import httpx
 from openai import OpenAI
 
-# Gemini 主力（默认 gemini-2.5-flash，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
-GEMINI_URL   = "https://generativelanguage.googleapis.com/v1beta/openai"
-GEMINI_MODEL = os.environ.get("PRIMARY_MODEL", "gemini-2.5-flash")
+# DeepSeek 主力（默认 deepseek-chat，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
+DEEPSEEK_URL   = "https://api.deepseek.com/v1"
+DEEPSEEK_MODEL = os.environ.get("PRIMARY_MODEL", "deepseek-chat")
 
 # 智谱 GLM 兜底（默认 glm-4.7-flash，永久免费）
 ZHIPU_URL   = "https://open.bigmodel.cn/api/paas/v4"
@@ -91,23 +91,23 @@ def call_ai(messages: list, **kwargs):
 
 def _complete(messages: list, **kwargs):
     """
-    两级直连链：Gemini 2.5 Flash → 智谱 glm-4.7-flash。
+    两级直连链：DeepSeek V3 → 智谱 glm-4.7-flash。
     """
-    # 1. Gemini 2.5 Flash（高质量，免费 1M tokens/天）
-    gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if gemini_key:
+    # 1. DeepSeek V3（强中文，按量付费极便宜）
+    deepseek_key = os.environ.get("DEEPSEEK_API_KEY", "")
+    if deepseek_key:
         try:
-            print(f"  [gemini] 使用 {GEMINI_MODEL}…")
-            c = OpenAI(api_key=gemini_key, base_url=GEMINI_URL)
-            resp = c.chat.completions.create(model=GEMINI_MODEL, messages=messages, **kwargs)
-            return resp, "gemini"
+            print(f"  [deepseek] 使用 {DEEPSEEK_MODEL}…")
+            c = OpenAI(api_key=deepseek_key, base_url=DEEPSEEK_URL)
+            resp = c.chat.completions.create(model=DEEPSEEK_MODEL, messages=messages, **kwargs)
+            return resp, "deepseek"
         except Exception as e:
-            print(f"  [gemini] 不可用 ({type(e).__name__})，切换智谱…")
+            print(f"  [deepseek] 不可用 ({type(e).__name__})，切换智谱…")
 
     # 2. 智谱 glm-4.7-flash（永久免费兜底）
     zhipu_key = os.environ.get("ZHIPU_API_KEY", "")
     if not zhipu_key:
-        raise RuntimeError("所有 AI 服务不可用：未配置 GEMINI_API_KEY 或 ZHIPU_API_KEY")
+        raise RuntimeError("所有 AI 服务不可用：未配置 DEEPSEEK_API_KEY 或 ZHIPU_API_KEY")
     print(f"  [zhipu] 使用 {ZHIPU_MODEL} 兜底…")
     c = OpenAI(api_key=zhipu_key, base_url=ZHIPU_URL)
     resp = c.chat.completions.create(model=ZHIPU_MODEL, messages=messages, **kwargs)
@@ -219,7 +219,7 @@ def score_articles(
             # 记录实际模型名（优先用响应中的）
             if not _usage["model"]:
                 _usage["model"] = getattr(resp, "model", "") or (
-                    GEMINI_MODEL if backend == "gemini" else ZHIPU_MODEL
+                    DEEPSEEK_MODEL if backend == "deepseek" else ZHIPU_MODEL
                 )
             results = _parse_response(resp.choices[0].message.content or "")
             if results:
