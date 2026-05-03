@@ -69,6 +69,7 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
         color       = _score_color(sc)
         label       = _score_label(sc)
         title_zh    = art.get("title_zh") or art.get("title", "")
+        title_en    = art.get("title", "") if (art.get("lang") == "en" and art.get("title_zh") and art["title_zh"] != art.get("title", "")) else ""
         summary_zh  = art.get("summary_zh", "")
         summary_en  = art.get("summary", "")
         summary     = summary_zh or summary_en
@@ -114,6 +115,7 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
           <div style="font-size:15px;font-weight:600;color:#212529;line-height:1.4;">
             <a href="{url}" style="color:#212529;text-decoration:none;">{title_zh}</a>
           </div>
+          {"" if not title_en else f'<div style="font-size:12px;color:#868e96;margin-top:3px;">{title_en}</div>'}
           <div style="margin-top:6px;">
             <span style="display:inline-block;padding:1px 7px;border-radius:3px;
                          font-size:11px;font-weight:700;color:{color};background:{color}22;">{label}</span>

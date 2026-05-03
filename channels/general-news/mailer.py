@@ -69,7 +69,7 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
         color        = _score_color(sc)
         label        = _score_label(sc)
         title_zh     = art.get("title_zh") or art.get("title", "")
-        title_en     = art.get("title", "") if art.get("lang") == "en" else ""
+        title_en     = art.get("title", "") if (art.get("lang") == "en" and art.get("title_zh") and art["title_zh"] != art.get("title", "")) else ""
         summary_zh   = art.get("summary_zh", "")
         summary_en   = art.get("summary", "")
         summary      = summary_zh or summary_en
