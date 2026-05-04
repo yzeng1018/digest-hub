@@ -50,7 +50,7 @@ def main():
         model_metrics = {}
     else:
         print(f"Scoring {len(articles)} articles with Qwen…")
-        articles = score_articles(articles, SCORING_SYSTEM_PROMPT, batch_size=25)
+        articles = score_articles(articles, SCORING_SYSTEM_PROMPT, batch_size=10)
         usage_info = get_usage()
         model_metrics = get_metrics(articles)
         report_to_gateway(usage_info, project="digest-hub/general-news")

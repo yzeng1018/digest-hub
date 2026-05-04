@@ -208,7 +208,7 @@ def score_articles(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_msg},
                 ],
-                max_tokens=4096,
+                max_tokens=8192,
                 timeout=120,
             )
             # 累计 token 消耗
