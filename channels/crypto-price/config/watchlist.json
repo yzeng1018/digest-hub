@@ -1,0 +1,12 @@
+{
+  "topN": 100,
+  "alwaysShow": ["bitcoin", "ethereum", "solana", "bnb", "xrp"],
+  "sectors": {
+    "L1": ["bitcoin", "ethereum", "solana", "avalanche-2", "near"],
+    "DeFi": ["uniswap", "aave", "maker", "curve-dao-token", "lido-dao"],
+    "AI": ["fetch-ai", "render-token", "worldcoin-wld", "singularitynet", "bittensor"],
+    "Meme": ["dogecoin", "shiba-inu", "pepe", "bonk"],
+    "RWA": ["chainlink", "ondo-finance", "mantra-dao"],
+    "L2": ["arbitrum", "optimism", "polygon", "starknet"]
+  }
+}

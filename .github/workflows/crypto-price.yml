@@ -1,0 +1,33 @@
+name: 加密价格雷达 Price Radar
+
+on:
+  schedule:
+    - cron: "0 23 * * *"   # 北京时间 07:00（UTC 23:00），早晨开盘前收到
+    - cron: "0 11 * * *"   # 北京时间 19:00（UTC 11:00），晚间复盘
+  workflow_dispatch:
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: channels/crypto-price/package-lock.json
+
+      - name: 安装依赖
+        run: npm install --prefix channels/crypto-price
+
+      - name: 运行价格雷达
+        env:
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
+          DEEPSEEK_API_KEY:   ${{ secrets.DEEPSEEK_API_KEY }}
+          ZHIPU_API_KEY:      ${{ secrets.ZHIPU_API_KEY }}
+          PRIMARY_MODEL:      ${{ vars.PRIMARY_MODEL }}
+          FALLBACK_MODEL:     ${{ vars.FALLBACK_MODEL }}
+        run: node channels/crypto-price/main.js
