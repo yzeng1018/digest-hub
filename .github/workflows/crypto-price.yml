@@ -20,7 +20,7 @@ jobs:
           cache-dependency-path: channels/crypto-price/package-lock.json
 
       - name: 安装依赖
-        run: npm install --prefix channels/crypto-price
+        run: npm install && npm install --prefix channels/crypto-price
 
       - name: 运行价格雷达
         env:
