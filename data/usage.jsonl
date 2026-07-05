@@ -2,3 +2,12 @@
 {"ts":"2026-04-28T07:33:05Z","provider":"volcengine","model":"ep-20260323110232-cjr59","project":"digest-hub/general-news","input_tokens":18920,"output_tokens":5102,"cost_usd":0.0,"latency_ms":0,"status":"success"}
 {"ts":"2026-04-28T07:35:41Z","provider":"qwen","model":"qwen-max","project":"digest-hub/investment","input_tokens":9830,"output_tokens":2910,"cost_usd":0.00159,"latency_ms":0,"status":"success"}
 {"ts":"2026-04-28T07:36:02Z","provider":"volcengine","model":"ep-20260323110232-cjr59","project":"digest-hub/investment","input_tokens":14200,"output_tokens":4380,"cost_usd":0.0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:26:44Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":1279,"output_tokens":2000,"cost_usd":0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:51:44Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":528,"output_tokens":500,"cost_usd":0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:52:01Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":47,"output_tokens":300,"cost_usd":0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:52:14Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":39,"output_tokens":200,"cost_usd":0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:52:27Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":18,"output_tokens":224,"cost_usd":0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:53:03Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":115,"output_tokens":1474,"cost_usd":0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:54:05Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":1273,"output_tokens":2168,"cost_usd":0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:54:45Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":1275,"output_tokens":2766,"cost_usd":0,"latency_ms":0,"status":"success"}
+{"ts":"2026-06-03T06:57:31Z","provider":"zhipu","model":"glm-4.7-flash","project":"digest-hub","input_tokens":1282,"output_tokens":2692,"cost_usd":0,"latency_ms":0,"status":"success"}
