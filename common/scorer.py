@@ -14,13 +14,9 @@ from collections.abc import Callable
 import httpx
 from openai import OpenAI
 
-# DeepSeek 主力（默认 deepseek-chat，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
-DEEPSEEK_URL   = "https://api.deepseek.com/v1"
-DEEPSEEK_MODEL = os.environ.get("PRIMARY_MODEL", "deepseek-chat")
-
-# 智谱 GLM 兜底（默认 glm-4.7-flash，永久免费）
+# 固定免费模型，不接受环境变量覆盖，防止误切到付费模型。
 ZHIPU_URL   = "https://open.bigmodel.cn/api/paas/v4"
-ZHIPU_MODEL = os.environ.get("FALLBACK_MODEL", "glm-4.7-flash")
+ZHIPU_MODEL = "glm-4.7-flash"
 
 # 模块级 usage 累计器，每次 score_articles 调用前重置
 _usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -83,7 +79,7 @@ def get_metrics(articles: list[dict]) -> dict:
 def call_ai(messages: list, **kwargs):
     """
     公共 AI 调用入口（供 enricher 等模块使用）。
-    自动处理 gateway → 火山方舟 fallback，只返回 response 对象。
+    只调用免费的智谱 GLM Flash，返回 response 对象。
     """
     resp, _ = _complete(messages, **kwargs)
     return resp
@@ -91,24 +87,12 @@ def call_ai(messages: list, **kwargs):
 
 def _complete(messages: list, **kwargs):
     """
-    两级直连链：DeepSeek V3 → 智谱 glm-4.7-flash。
+    单一免费直连：智谱 glm-4.7-flash。
     """
-    # 1. DeepSeek V3（强中文，按量付费极便宜）
-    deepseek_key = os.environ.get("DEEPSEEK_API_KEY", "")
-    if deepseek_key:
-        try:
-            print(f"  [deepseek] 使用 {DEEPSEEK_MODEL}…")
-            c = OpenAI(api_key=deepseek_key, base_url=DEEPSEEK_URL)
-            resp = c.chat.completions.create(model=DEEPSEEK_MODEL, messages=messages, **kwargs)
-            return resp, "deepseek"
-        except Exception as e:
-            print(f"  [deepseek] 不可用 ({type(e).__name__}: {e})，切换智谱…")
-
-    # 2. 智谱 glm-4.7-flash（永久免费兜底）
     zhipu_key = os.environ.get("ZHIPU_API_KEY", "")
     if not zhipu_key:
-        raise RuntimeError("所有 AI 服务不可用：未配置 DEEPSEEK_API_KEY 或 ZHIPU_API_KEY")
-    print(f"  [zhipu] 使用 {ZHIPU_MODEL} 兜底…")
+        raise RuntimeError("免费 AI 服务不可用：未配置 ZHIPU_API_KEY")
+    print(f"  [zhipu] 使用免费模型 {ZHIPU_MODEL}…")
     c = OpenAI(api_key=zhipu_key, base_url=ZHIPU_URL)
     resp = c.chat.completions.create(model=ZHIPU_MODEL, messages=messages, **kwargs)
     return resp, "zhipu"
@@ -218,9 +202,7 @@ def score_articles(
                 _usage["total_tokens"]      += resp.usage.total_tokens
             # 记录实际模型名（优先用响应中的）
             if not _usage["model"]:
-                _usage["model"] = getattr(resp, "model", "") or (
-                    DEEPSEEK_MODEL if backend == "deepseek" else ZHIPU_MODEL
-                )
+                _usage["model"] = getattr(resp, "model", "") or ZHIPU_MODEL
             results = _parse_response(resp.choices[0].message.content or "")
             if results:
                 _metrics["batches_parsed"] += 1

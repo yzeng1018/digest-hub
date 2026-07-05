@@ -132,7 +132,7 @@ def report_to_gateway(usage_info: dict, project: str) -> None:
     if not usage_info or not usage_info.get("total_tokens"):
         return
 
-    model    = usage_info.get("model") or "qwen-max"
+    model    = usage_info.get("model") or "glm-4.7-flash"
     in_t     = usage_info.get("prompt_tokens", 0)
     out_t    = usage_info.get("completion_tokens", 0)
     cost     = _calc_cost(model, in_t, out_t)

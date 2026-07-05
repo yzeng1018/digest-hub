@@ -1,8 +1,7 @@
 /**
  * 公共 AI 调用模块
  *
- * 调用链：gateway → 火山方舟豆包 Lite → Qwen Max
- * 每级失败自动切下一级，调用方无需关心。
+ * 只调用免费的智谱 GLM Flash，避免任何付费模型费用。
  */
 
 import OpenAI from 'openai';
@@ -32,40 +31,19 @@ function _appendLocal({ provider, model, response, project = '' }) {
   } catch (_) { /* 日志写入失败不中断主流程 */ }
 }
 
-// DeepSeek 主力（默认 deepseek-chat，可通过 GitHub Variable PRIMARY_MODEL 覆盖）
-const DEEPSEEK_URL   = 'https://api.deepseek.com/v1';
-const DEEPSEEK_KEY   = process.env.DEEPSEEK_API_KEY || '';
-const DEEPSEEK_MODEL = process.env.PRIMARY_MODEL || 'deepseek-chat';
-
-// 智谱 GLM 兜底（默认 glm-4.7-flash，永久免费）
+// 固定免费模型，不接受环境变量覆盖，防止误切到付费模型。
 const ZHIPU_URL   = 'https://open.bigmodel.cn/api/paas/v4';
 const ZHIPU_KEY   = process.env.ZHIPU_API_KEY || '';
-const ZHIPU_MODEL = process.env.FALLBACK_MODEL || 'glm-4.7-flash';
+const ZHIPU_MODEL = 'glm-4.7-flash';
 
 /**
  * 调用 LLM，返回 { response, backend }。
- * 失败时按顺序自动降级：gateway → 火山方舟 → Qwen Max。
- *
  * @param {Array<{role: string, content: string}>} messages
  * @param {number} maxTokens
- * @param {string} gatewayTier - gateway 路由 tier，如 'free' / 'best'
  * @returns {Promise<{response: object, backend: string}>}
  */
-export async function callAI(messages, maxTokens = 4096, gatewayTier = 'free') {
-  // 1. DeepSeek V3（强中文，按量付费极便宜）
-  if (DEEPSEEK_KEY) {
-    try {
-      const c = new OpenAI({ baseURL: DEEPSEEK_URL, apiKey: DEEPSEEK_KEY });
-      const r = await c.chat.completions.create({ model: DEEPSEEK_MODEL, messages, max_tokens: maxTokens });
-      _appendLocal({ provider: 'deepseek', model: DEEPSEEK_MODEL, response: r });
-      return { response: r, backend: 'deepseek' };
-    } catch (err) {
-      console.log(`  [WARN] DeepSeek 不可用(${err.status || err.code})，切换到智谱…`);
-    }
-  }
-
-  // 2. 智谱 glm-4.7-flash（永久免费兜底）
-  if (!ZHIPU_KEY) throw new Error('所有 AI 服务不可用：未配置 DEEPSEEK_API_KEY 或 ZHIPU_API_KEY');
+export async function callAI(messages, maxTokens = 4096) {
+  if (!ZHIPU_KEY) throw new Error('免费 AI 服务不可用：未配置 ZHIPU_API_KEY');
   const c = new OpenAI({ baseURL: ZHIPU_URL, apiKey: ZHIPU_KEY });
   const r = await c.chat.completions.create({ model: ZHIPU_MODEL, messages, max_tokens: maxTokens });
   _appendLocal({ provider: 'zhipu', model: ZHIPU_MODEL, response: r });

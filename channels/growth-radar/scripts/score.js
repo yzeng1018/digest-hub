@@ -10,8 +10,7 @@ export const tokenUsage = { model: '', prompt: 0, completion: 0, total: 0 };
 export const tokenMetrics = { parseRate: 0, scoreSpread: 0, translationRate: 0, perfScore: 0 };
 
 
-// growth-radar 使用 'best' tier（高质量模型）
-const callAI = (messages) => _callAI(messages, 4096, 'best');
+const callAI = (messages) => _callAI(messages, 4096);
 
 function summaryFor(art) {
   if (art.platform === 'Podcast' && art.transcript) return art.transcript.slice(0, 2000);
