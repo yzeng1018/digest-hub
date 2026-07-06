@@ -9,8 +9,8 @@ Multi-channel digest generator that fetches public sources, deduplicates items, 
 | Growth Radar | `channels/growth-radar` | Node.js | Daily 05:00 Beijing |
 | Product Radar | `channels/product-radar` | Python | Daily 05:30 Beijing |
 | Crypto | `channels/crypto` | Node.js | Daily 05:45 Beijing |
+| Crypto Price | `channels/crypto-price` | Node.js | Daily 07:00 and 19:00 Beijing |
 | AI Info | `channels/ai-info` | Node.js | Daily 07:30 Beijing |
-| General News | `channels/general-news` | Python | Daily 07:30 Beijing |
 | Investment | `channels/investment` | Python | Daily 07:30 Beijing |
 | Growth Weekly | `channels/growth-weekly` | Node.js | Saturday 09:00 Beijing |
 | Product Radar Weekly | `channels/product-radar/main_weekly.py` | Python | Saturday 10:00 Beijing |
@@ -56,9 +56,5 @@ Check recent runs:
 ```bash
 gh run list --repo yzeng1018/digest-hub --limit 10
 ```
-
-## Failure Behavior
-
-Email delivery is treated as a required step. If `GMAIL_APP_PASSWORD` is missing or SMTP delivery fails, the channel now raises an error so GitHub Actions turns red instead of silently reporting success.
 
 For local development, pass `--no-email` when you only want to generate output files.
