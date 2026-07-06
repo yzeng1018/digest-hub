@@ -11,6 +11,7 @@ loadEnv({ path: join(__dirname, '.env') });
 
 import { fetchTweets } from './scripts/fetchTweets.js';
 import { fetchBlogs }  from './scripts/fetchBlogs.js';
+import { fetchMarketSnapshot } from './scripts/fetchMarket.js';
 import { deduplicate } from './scripts/dedup.js';
 import { scoreArticles, reportUsage, tokenUsage, tokenMetrics } from './scripts/score.js';
 import { enrichArticles } from './scripts/enrich.js';
@@ -31,9 +32,13 @@ const { values: args } = parseArgs({
 async function main() {
   console.log(`\n开始抓取加密情报（过去 ${cfg.timeWindowHours}h）…`);
 
-  const [tweets, blogs] = await Promise.all([
+  const [tweets, blogs, marketData] = await Promise.all([
     fetchTweets(sources.twitter, sources.nitterInstances, cfg),
     fetchBlogs(sources.blogs, cfg),
+    fetchMarketSnapshot().catch(err => {
+      console.log(`[WARN] 行情数据抓取失败，继续生成情报邮件: ${err.message}`);
+      return null;
+    }),
   ]);
 
   let articles = [...tweets, ...blogs];
@@ -71,13 +76,13 @@ async function main() {
   const outputDir = join(__dirname, 'output');
   await mkdir(outputDir, { recursive: true });
 
-  const markdown = render(articles, dateStr, args['no-score'] ? {} : tokenUsage);
+  const markdown = render(articles, dateStr, args['no-score'] ? {} : tokenUsage, marketData);
   const outputPath = join(outputDir, `${dateStr}.md`);
   await writeFile(outputPath, markdown, 'utf8');
   console.log(`\nMarkdown 已保存 → ${outputPath}`);
 
   if (!args['no-email']) {
-    await deliver(markdown, articles, dateStr, args['no-score'] ? {} : tokenUsage, args['no-score'] ? {} : tokenMetrics);
+    await deliver(markdown, articles, dateStr, args['no-score'] ? {} : tokenUsage, args['no-score'] ? {} : tokenMetrics, marketData);
   }
 
   const mustReads = articles.filter(a => (a.score || 0) >= cfg.scoreMustRead).length;

@@ -6,10 +6,8 @@ Multi-channel digest generator that fetches public sources, deduplicates items, 
 
 | Channel | Path | Runtime | Schedule |
 | --- | --- | --- | --- |
-| Growth Radar | `channels/growth-radar` | Node.js | Daily 05:00 Beijing |
 | Product Radar | `channels/product-radar` | Python | Daily 05:30 Beijing |
-| Crypto | `channels/crypto` | Node.js | Daily 05:45 Beijing |
-| Crypto Price | `channels/crypto-price` | Node.js | Daily 07:00 and 19:00 Beijing |
+| Crypto | `channels/crypto` | Node.js | Daily 05:45 Beijing; includes a CoinGecko market snapshot |
 | AI Info | `channels/ai-info` | Node.js | Daily 07:30 Beijing |
 | Investment | `channels/investment` | Python | Daily 07:30 Beijing |
 | Growth Weekly | `channels/growth-weekly` | Node.js | Saturday 09:00 Beijing |
@@ -29,8 +27,8 @@ Node channels:
 
 ```bash
 npm install
-npm install --prefix channels/growth-radar
-node channels/growth-radar/main.js --no-email
+npm install --prefix channels/crypto
+node channels/crypto/main.js --no-email --no-score
 ```
 
 Python channels:
@@ -45,7 +43,6 @@ Use `--no-score` for a fast dry run that skips LLM calls.
 ## Manual Dispatch
 
 ```bash
-gh workflow run growth-radar.yml --repo yzeng1018/digest-hub
 gh workflow run product-radar.yml --repo yzeng1018/digest-hub
 gh workflow run crypto.yml --repo yzeng1018/digest-hub
 gh workflow run morning-digest.yml --repo yzeng1018/digest-hub

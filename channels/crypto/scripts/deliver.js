@@ -10,6 +10,50 @@ function scoreColor(score) {
   return '#74c0fc';
 }
 
+function fmtPct(value) {
+  if (value === null || value === undefined) return '—';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+}
+
+function changeColor(value) {
+  return value >= 0 ? '#2f9e44' : '#e03131';
+}
+
+function marketSnapshot(data) {
+  if (!data) return '';
+  const { overview, keyCoins, gainers, losers } = data;
+  const keyCards = [keyCoins.btc, keyCoins.eth, keyCoins.sol]
+    .filter(Boolean)
+    .map(coin => {
+      const change = coin.price_change_percentage_24h || 0;
+      return `<td width="33.33%" style="padding:10px 6px;text-align:center;">
+        <div style="font-size:11px;color:#868e96;">${coin.symbol.toUpperCase()}</div>
+        <div style="margin-top:3px;font-size:17px;font-weight:800;color:#212529;">${coin.priceFmt}</div>
+        <div style="margin-top:2px;font-size:12px;font-weight:700;color:${changeColor(change)};">${fmtPct(change)}</div>
+      </td>`;
+    }).join('');
+  const mover = coin => {
+    const change = coin.price_change_percentage_24h || 0;
+    return `<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 7px;border-radius:4px;background:#f1f3f5;font-size:11px;color:#495057;">
+      ${coin.symbol.toUpperCase()} <strong style="color:${changeColor(change)};">${fmtPct(change)}</strong>
+    </span>`;
+  };
+  const sentiment = overview.fearGreed === null
+    ? ''
+    : ` &nbsp;·&nbsp; 恐惧贪婪 <strong>${overview.fearGreed}/100</strong>`;
+
+  return `<tr><td style="padding:16px 20px;border-bottom:1px solid #dee2e6;background:#fff9db;">
+    <div style="font-size:14px;font-weight:700;color:#e67700;margin-bottom:8px;">📈 市场快照</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #ffe8a1;border-radius:8px;"><tr>${keyCards}</tr></table>
+    <div style="margin-top:9px;font-size:12px;color:#495057;line-height:1.6;">
+      总市值 <strong>${overview.totalMarketCapFmt}</strong>
+      <strong style="color:${changeColor(overview.marketCapChange24h)};">${fmtPct(overview.marketCapChange24h)}</strong>
+      &nbsp;·&nbsp; BTC 市占率 <strong>${overview.btcDominance.toFixed(1)}%</strong>${sentiment}
+    </div>
+    <div style="margin-top:7px;font-size:11px;color:#868e96;">领涨 ${gainers.map(mover).join('')} &nbsp; 领跌 ${losers.map(mover).join('')}</div>
+  </td></tr>`;
+}
+
 function usageBar(tokenUsage, tokenMetrics = {}) {
   if (!tokenUsage || !tokenUsage.model) return '';
   const model = tokenUsage.model;
@@ -29,7 +73,7 @@ function usageBar(tokenUsage, tokenMetrics = {}) {
   return `<div style="margin-top:10px;padding:6px 14px;background:rgba(255,255,255,0.15);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">🤖 ${model} &nbsp;·&nbsp; ${tokenStr}${perfHtml}</div>`;
 }
 
-function buildHtml(articles, dateStr, tokenUsage = {}, tokenMetrics = {}) {
+function buildHtml(articles, dateStr, tokenUsage = {}, tokenMetrics = {}, marketData = null) {
   const mustCount = articles.filter(a => a.score >= 8).length;
   const impCount  = articles.filter(a => a.score >= 6 && a.score < 8).length;
 
@@ -90,6 +134,7 @@ function buildHtml(articles, dateStr, tokenUsage = {}, tokenMetrics = {}) {
   </td></tr>
   <tr><td style="background:#fff;border-radius:0 0 12px 12px;border:1px solid #dee2e6;border-top:none;">
     <table width="100%" cellpadding="0" cellspacing="0">
+      ${marketSnapshot(marketData)}
       ${rows}
       <tr><td style="padding:12px;text-align:center;background:#f8f9fa;border-radius:0 0 12px 12px;">
         <div style="font-size:11px;color:#adb5bd;">AI 自动生成 · 来源：X / Blog</div>
@@ -101,7 +146,7 @@ function buildHtml(articles, dateStr, tokenUsage = {}, tokenMetrics = {}) {
 </body></html>`;
 }
 
-export async function deliver(markdown, articles, dateStr, tokenUsage = {}, tokenMetrics = {}) {
+export async function deliver(markdown, articles, dateStr, tokenUsage = {}, tokenMetrics = {}, marketData = null) {
   if (!GMAIL_PASS) {
     console.log('[WARN] GMAIL_APP_PASSWORD 未设置，跳过邮件');
     return;
@@ -119,8 +164,10 @@ export async function deliver(markdown, articles, dateStr, tokenUsage = {}, toke
     tls: { servername: 'smtp.gmail.com', rejectUnauthorized: false },
   });
 
-  const subject = `每日加密情报 · ${dateStr}`;
-  const html = buildHtml(articles, dateStr, tokenUsage, tokenMetrics);
+  const btc = marketData?.keyCoins?.btc;
+  const marketSuffix = btc ? ` · BTC ${btc.priceFmt} ${fmtPct(btc.price_change_percentage_24h || 0)}` : '';
+  const subject = `每日加密情报 · ${dateStr}${marketSuffix}`;
+  const html = buildHtml(articles, dateStr, tokenUsage, tokenMetrics, marketData);
 
   try {
     await transporter.sendMail({ from: SENDER, to: RECIPIENT, subject, html });
