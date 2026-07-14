@@ -34,6 +34,7 @@ GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "")
 
 # qwen-max 单价（USD / 1M tokens），与 token-management/config/providers.yaml 保持一致
 _COST_TABLE: dict[str, tuple[float, float]] = {
+    "qwen/qwen3.6-27b": (0.0, 0.0),  # Groq 免费层
     "qwen-max":   (0.04,  0.12),
     "qwen-plus":  (0.004, 0.012),
     "qwen-turbo": (0.002, 0.006),
@@ -53,6 +54,8 @@ def _calc_cost(model: str, input_tokens: int, output_tokens: int) -> float:
 
 
 def _infer_provider(model: str) -> str:
+    if model.startswith("qwen/qwen3.6-27b"):
+        return "groq"
     if any(model.startswith(k) for k in _GLM_COST_TABLE):
         return "zhipu"
     return "qwen"
@@ -64,6 +67,7 @@ def _infer_provider_from_model(model: str) -> str:
     if "glm" in m:            return "zhipu"
     if "llama" in m:          return "groq"
     if "ernie" in m:          return "baidu"
+    if m.startswith("qwen/"): return "groq"
     if "qwen" in m:           return "qwen"
     if "hunyuan" in m:        return "hunyuan"
     if "gemma" in m:          return "openrouter"
@@ -132,7 +136,7 @@ def report_to_gateway(usage_info: dict, project: str) -> None:
     if not usage_info or not usage_info.get("total_tokens"):
         return
 
-    model    = usage_info.get("model") or "glm-4.7-flash"
+    model    = usage_info.get("model") or "qwen/qwen3.6-27b"
     in_t     = usage_info.get("prompt_tokens", 0)
     out_t    = usage_info.get("completion_tokens", 0)
     cost     = _calc_cost(model, in_t, out_t)

@@ -14,9 +14,9 @@ from collections.abc import Callable
 import httpx
 from openai import OpenAI
 
-# 固定免费模型，不接受环境变量覆盖，防止误切到付费模型。
-ZHIPU_URL   = "https://open.bigmodel.cn/api/paas/v4"
-ZHIPU_MODEL = "glm-4.7-flash"
+# 固定 Groq 免费层上的 Qwen 模型，不接受环境变量覆盖，防止误切到付费模型。
+GROQ_URL   = "https://api.groq.com/openai/v1"
+GROQ_MODEL = "qwen/qwen3.6-27b"
 
 # 模块级 usage 累计器，每次 score_articles 调用前重置
 _usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -79,7 +79,7 @@ def get_metrics(articles: list[dict]) -> dict:
 def call_ai(messages: list, **kwargs):
     """
     公共 AI 调用入口（供 enricher 等模块使用）。
-    只调用免费的智谱 GLM Flash，返回 response 对象。
+    只调用 Groq 免费层上的 Qwen，返回 response 对象。
     """
     resp, _ = _complete(messages, **kwargs)
     return resp
@@ -87,15 +87,34 @@ def call_ai(messages: list, **kwargs):
 
 def _complete(messages: list, **kwargs):
     """
-    单一免费直连：智谱 glm-4.7-flash。
+    单一免费直连：Groq qwen/qwen3.6-27b。
     """
-    zhipu_key = os.environ.get("ZHIPU_API_KEY", "")
-    if not zhipu_key:
-        raise RuntimeError("免费 AI 服务不可用：未配置 ZHIPU_API_KEY")
-    print(f"  [zhipu] 使用免费模型 {ZHIPU_MODEL}…")
-    c = OpenAI(api_key=zhipu_key, base_url=ZHIPU_URL)
-    resp = c.chat.completions.create(model=ZHIPU_MODEL, messages=messages, **kwargs)
-    return resp, "zhipu"
+    groq_key = os.environ.get("GROQ_API_KEY", "")
+    if not groq_key:
+        raise RuntimeError("免费 AI 服务不可用：未配置 GROQ_API_KEY")
+    print(f"  [groq] 使用免费模型 {GROQ_MODEL}…")
+    c = OpenAI(api_key=groq_key, base_url=GROQ_URL)
+    for attempt in range(3):
+        try:
+            resp = c.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=messages,
+                extra_body={"reasoning_effort": "none"},
+                **kwargs,
+            )
+            return resp, "groq"
+        except Exception as exc:
+            if getattr(exc, "status_code", None) != 429 or attempt == 2:
+                raise
+            headers = getattr(getattr(exc, "response", None), "headers", {})
+            try:
+                delay = min(90.0, max(1.0, float(headers.get("retry-after", 30))))
+            except (TypeError, ValueError):
+                delay = 30.0 * (attempt + 1)
+            print(f"  [groq] 触发免费层限流，{delay:g} 秒后重试…")
+            time.sleep(delay)
+
+    raise RuntimeError("Groq 请求重试失败")
 
 USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
 
@@ -192,7 +211,7 @@ def score_articles(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_msg},
                 ],
-                max_tokens=8192,
+                max_tokens=4096,
                 timeout=120,
             )
             # 累计 token 消耗
@@ -202,7 +221,7 @@ def score_articles(
                 _usage["total_tokens"]      += resp.usage.total_tokens
             # 记录实际模型名（优先用响应中的）
             if not _usage["model"]:
-                _usage["model"] = getattr(resp, "model", "") or ZHIPU_MODEL
+                _usage["model"] = getattr(resp, "model", "") or GROQ_MODEL
             results = _parse_response(resp.choices[0].message.content or "")
             if results:
                 _metrics["batches_parsed"] += 1

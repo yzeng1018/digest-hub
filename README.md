@@ -19,7 +19,7 @@ GitHub Actions expects these repository secrets:
 
 - `GMAIL_APP_PASSWORD`: Gmail 16-character app password. Required for email delivery.
 - `DIGEST_RECIPIENT`: Email recipient. If omitted, code defaults to the sender address.
-- `ZHIPU_API_KEY`: Key for the free `glm-4.7-flash` model. All AI calls are pinned to this model; paid-model environment variables are ignored.
+- `GROQ_API_KEY`: Groq API key for the free `qwen/qwen3.6-27b` model. All AI calls are pinned to this model; paid-model environment variables are ignored.
 
 ## Local Runs
 

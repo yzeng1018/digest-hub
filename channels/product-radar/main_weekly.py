@@ -222,7 +222,7 @@ def main():
             art["summary_zh"] = art["summary"]
     else:
         print(f"[周报] 评分 {len(articles)} 篇文章（严选模式）…")
-        articles = score_articles(articles, WEEKLY_SCORING_PROMPT, batch_size=25)
+        articles = score_articles(articles, WEEKLY_SCORING_PROMPT, batch_size=10)
 
     # 严选：只保留高分文章
     articles = [a for a in articles if a.get("score", 0) >= WEEKLY_MIN_SCORE]

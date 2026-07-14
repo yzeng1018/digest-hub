@@ -1,7 +1,7 @@
 /**
  * 公共 AI 调用模块
  *
- * 只调用免费的智谱 GLM Flash，避免任何付费模型费用。
+ * 只调用 Groq 免费层上的 Qwen，避免任何付费模型费用。
  */
 
 import OpenAI from 'openai';
@@ -31,10 +31,10 @@ function _appendLocal({ provider, model, response, project = '' }) {
   } catch (_) { /* 日志写入失败不中断主流程 */ }
 }
 
-// 固定免费模型，不接受环境变量覆盖，防止误切到付费模型。
-const ZHIPU_URL   = 'https://open.bigmodel.cn/api/paas/v4';
-const ZHIPU_KEY   = process.env.ZHIPU_API_KEY || '';
-const ZHIPU_MODEL = 'glm-4.7-flash';
+// 固定 Groq 免费层上的 Qwen 模型，不接受环境变量覆盖，防止误切到付费模型。
+const GROQ_URL   = 'https://api.groq.com/openai/v1';
+const GROQ_KEY   = process.env.GROQ_API_KEY || '';
+const GROQ_MODEL = 'qwen/qwen3.6-27b';
 
 /**
  * 调用 LLM，返回 { response, backend }。
@@ -43,11 +43,30 @@ const ZHIPU_MODEL = 'glm-4.7-flash';
  * @returns {Promise<{response: object, backend: string}>}
  */
 export async function callAI(messages, maxTokens = 4096) {
-  if (!ZHIPU_KEY) throw new Error('免费 AI 服务不可用：未配置 ZHIPU_API_KEY');
-  const c = new OpenAI({ baseURL: ZHIPU_URL, apiKey: ZHIPU_KEY });
-  const r = await c.chat.completions.create({ model: ZHIPU_MODEL, messages, max_tokens: maxTokens });
-  _appendLocal({ provider: 'zhipu', model: ZHIPU_MODEL, response: r });
-  return { response: r, backend: 'zhipu' };
+  if (!GROQ_KEY) throw new Error('免费 AI 服务不可用：未配置 GROQ_API_KEY');
+  const c = new OpenAI({ baseURL: GROQ_URL, apiKey: GROQ_KEY });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const r = await c.chat.completions.create({
+        model: GROQ_MODEL,
+        messages,
+        max_tokens: maxTokens,
+        reasoning_effort: 'none',
+      });
+      _appendLocal({ provider: 'groq', model: GROQ_MODEL, response: r });
+      return { response: r, backend: 'groq' };
+    } catch (err) {
+      if (err?.status !== 429 || attempt === 2) throw err;
+      const header = err?.headers?.get?.('retry-after') ?? err?.headers?.['retry-after'];
+      const parsed = Number(header);
+      const delaySeconds = Number.isFinite(parsed)
+        ? Math.min(90, Math.max(1, parsed))
+        : 30 * (attempt + 1);
+      console.log(`  [groq] 触发免费层限流，${delaySeconds} 秒后重试…`);
+      await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+    }
+  }
+  throw new Error('Groq 请求重试失败');
 }
 
 /**
