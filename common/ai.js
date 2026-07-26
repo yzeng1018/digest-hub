@@ -12,7 +12,6 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const _LOCAL_LOG = join(__dirname, '..', 'data', 'usage.jsonl');
 
 const DEEPSEEK_URL   = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
 const DEEPSEEK_KEY   = process.env.DEEPSEEK_API_KEY || '';
@@ -63,6 +62,8 @@ const CHANNEL = process.env.CHANNEL_NAME || 'digest-hub';
 const AB_DATE = process.env.MODEL_AB_DATE || beijingDateString();
 const SELECTED_PROVIDER = selectModel(CHANNEL, AB_DATE);
 let activeProvider = null;
+const LOG_NAME = `${CHANNEL.replace(/[^a-zA-Z0-9._-]+/g, '-')}.jsonl`;
+const LOCAL_LOG = join(__dirname, '..', 'data', 'usage', LOG_NAME);
 
 function providerConfig(provider) {
   if (provider === 'deepseek') {
@@ -73,7 +74,7 @@ function providerConfig(provider) {
 
 function appendLocal({ provider, model, response, scheduledProvider }) {
   try {
-    mkdirSync(join(__dirname, '..', 'data'), { recursive: true });
+    mkdirSync(join(__dirname, '..', 'data', 'usage'), { recursive: true });
     const u = response?.usage || {};
     const record = {
       ts: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
@@ -89,7 +90,7 @@ function appendLocal({ provider, model, response, scheduledProvider }) {
       experiment_date: AB_DATE,
       scheduled_provider: scheduledProvider,
     };
-    appendFileSync(_LOCAL_LOG, JSON.stringify(record) + '\n');
+    appendFileSync(LOCAL_LOG, JSON.stringify(record) + '\n');
   } catch (_) { /* 日志写入失败不中断主流程 */ }
 }
 

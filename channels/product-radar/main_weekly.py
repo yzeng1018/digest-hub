@@ -21,7 +21,8 @@ from enricher import _enrich_one
 from config   import SOURCES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT
 
 from common.dedup  import deduplicate
-from common.scorer import score_articles
+from common.scorer import score_articles, get_usage, get_metrics
+from common.reporter import report_to_gateway, report_model_score
 from common.mailer import send_html
 
 import re
@@ -66,7 +67,12 @@ def _fetch_weekly() -> list[dict]:
     return all_articles
 
 
-def _build_weekly_html(articles: list[dict], week_str: str) -> str:
+def _build_weekly_html(
+    articles: list[dict],
+    week_str: str,
+    usage_info: dict | None = None,
+    model_metrics: dict | None = None,
+) -> str:
     """构建周报 HTML，风格更像杂志精选，适合精读。"""
     rows = ""
     for i, art in enumerate(articles, 1):
@@ -144,6 +150,17 @@ def _build_weekly_html(articles: list[dict], week_str: str) -> str:
   </td>
 </tr>"""
 
+    usage_info = usage_info or {}
+    model_metrics = model_metrics or {}
+    model = usage_info.get("model", "")
+    total_tokens = usage_info.get("total_tokens", 0)
+    perf_score = model_metrics.get("perf_score", 0)
+    usage_row = (
+        f'<div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.8);">'
+        f'🧪 A/B · 🤖 {model} · {total_tokens:,} tokens · 评分 {perf_score}/10</div>'
+        if model else ""
+    )
+
     body = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -161,6 +178,7 @@ def _build_weekly_html(articles: list[dict], week_str: str) -> str:
         产品设计精选周报
       </div>
       <div style="margin-top:8px;font-size:14px;color:rgba(255,255,255,0.85);">{week_str}</div>
+      {usage_row}
       <div style="margin-top:16px;padding:10px 20px;background:rgba(255,255,255,0.15);
                   border-radius:10px;display:inline-block;font-size:13px;color:#fff;">
         本周严选 <strong>{len(articles)}</strong> 篇 · 每篇均值得精读
@@ -214,6 +232,8 @@ def main():
 
     articles = deduplicate(articles, DEDUP_THRESHOLD)
 
+    usage_info: dict = {}
+    model_metrics: dict = {}
     if args.no_score:
         for art in articles:
             art["score"]      = 5
@@ -223,6 +243,12 @@ def main():
     else:
         print(f"[周报] 评分 {len(articles)} 篇文章（严选模式）…")
         articles = score_articles(articles, WEEKLY_SCORING_PROMPT, batch_size=10)
+        usage_info = get_usage()
+        model_metrics = get_metrics(articles)
+        report_to_gateway(usage_info, project="digest-hub/product-radar-weekly")
+        report_model_score(
+            usage_info, model_metrics, project="digest-hub/product-radar-weekly"
+        )
 
     # 严选：只保留高分文章
     articles = [a for a in articles if a.get("score", 0) >= WEEKLY_MIN_SCORE]
@@ -253,7 +279,7 @@ def main():
     date_str    = today.strftime("%Y-%m-%d")
     output_path = args.output or str(output_dir / f"weekly-{date_str}.html")
 
-    html = _build_weekly_html(articles, week_str)
+    html = _build_weekly_html(articles, week_str, usage_info, model_metrics)
     Path(output_path).write_text(html, encoding="utf-8")
     print(f"HTML saved → {output_path}")
 

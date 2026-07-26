@@ -5,6 +5,9 @@ on:
     - cron: "0 2 * * 6"   # 北京时间周六 10:00（UTC 周六 02:00）
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   weekly:
     runs-on: ubuntu-latest
@@ -29,3 +32,18 @@ jobs:
           QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           CHANNEL_NAME:       digest-hub/product-radar-weekly
         run: python channels/product-radar/main_weekly.py
+
+      - name: 提交 usage 日志
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/usage/*.jsonl 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: log AI usage [skip ci]"
+          for i in 1 2 3; do
+            if git pull --rebase origin main && git push; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 3))
+          done
+          exit 1

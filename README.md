@@ -27,6 +27,8 @@ GitHub Actions expects these repository secrets:
 DeepSeek V4 Flash and Qwen Max rotate daily using the Beijing calendar. The four
 daily emails are balanced 2:2, and every channel switches model the next day.
 The model printed in each email is the model that actually produced the result.
+Per-channel experiment records are stored under `data/usage/` so concurrent
+workflows can append and push results without editing the same file.
 
 Optional controls:
 

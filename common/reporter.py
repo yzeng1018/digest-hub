@@ -6,18 +6,18 @@
 
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).parent.parent
-_LOCAL_LOG = _REPO_ROOT / "data" / "usage.jsonl"
-
-
 def _append_local(record: dict) -> None:
-    _LOCAL_LOG.parent.mkdir(exist_ok=True)
-    with open(_LOCAL_LOG, "a") as f:
+    project = re.sub(r"[^a-zA-Z0-9._-]+", "-", record.get("project", "digest-hub"))
+    local_log = _REPO_ROOT / "data" / "usage" / f"{project}.jsonl"
+    local_log.parent.mkdir(parents=True, exist_ok=True)
+    with open(local_log, "a") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 # GLM 定价补充
