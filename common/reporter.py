@@ -108,6 +108,18 @@ def report_model_score(
         "article_count":    metrics.get("article_count", 0),
     }
 
+    project_name = re.sub(r"[^a-zA-Z0-9._-]+", "-", project)
+    score_log = _REPO_ROOT / "data" / "model-scores" / f"{project_name}.jsonl"
+    score_log.parent.mkdir(parents=True, exist_ok=True)
+    local_score = {
+        "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        **payload,
+        "scheduled_provider": usage_info.get("scheduled_provider", ""),
+        "experiment_date": usage_info.get("experiment_date", ""),
+    }
+    with open(score_log, "a") as f:
+        f.write(json.dumps(local_score, ensure_ascii=False) + "\n")
+
     url  = GATEWAY_URL.rstrip("/").removesuffix("/v1") + "/api/models/run-score"
     data = json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json"}

@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { callAI } from '../../../common/ai.js';
+import { callAI, reportExperimentScore } from '../../../common/ai.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SYSTEM_PROMPT = readFileSync(join(__dirname, '../prompts/score.md'), 'utf8');
@@ -92,6 +92,6 @@ export async function scoreArticles(articles, batchSize = 10) {
   return articles;
 }
 
-export async function reportUsage(_project) {
-  // Usage is now tracked automatically by the gateway — no manual reporting needed.
+export async function reportUsage(project) {
+  reportExperimentScore(tokenMetrics, tokenUsage.model, project);
 }

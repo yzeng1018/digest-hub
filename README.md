@@ -29,6 +29,8 @@ daily emails are balanced 2:2, and every channel switches model the next day.
 The model printed in each email is the model that actually produced the result.
 Per-channel experiment records are stored under `data/usage/` so concurrent
 workflows can append and push results without editing the same file.
+Quality metrics (parse rate, translation rate, score spread, and performance
+score) are stored per channel under `data/model-scores/`.
 
 Optional controls:
 

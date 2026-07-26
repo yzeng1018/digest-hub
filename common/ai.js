@@ -150,3 +150,24 @@ export async function callAIText(systemPrompt, userMsg, maxTokens = 1024) {
   const { response } = await callAI(messages, maxTokens);
   return response.choices[0].message.content || '';
 }
+
+export function reportExperimentScore(metrics = {}, model = '', project = CHANNEL) {
+  if (!model || !Object.keys(metrics).length) return;
+  try {
+    const logName = `${project.replace(/[^a-zA-Z0-9._-]+/g, '-')}.jsonl`;
+    const logDir = join(__dirname, '..', 'data', 'model-scores');
+    mkdirSync(logDir, { recursive: true });
+    appendFileSync(join(logDir, logName), JSON.stringify({
+      ts: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+      project,
+      model,
+      provider: activeProvider || SELECTED_PROVIDER,
+      scheduled_provider: SELECTED_PROVIDER,
+      experiment_date: AB_DATE,
+      parse_rate: metrics.parseRate || 0,
+      score_spread: metrics.scoreSpread || 0,
+      translation_rate: metrics.translationRate || 0,
+      perf_score: metrics.perfScore || 0,
+    }) + '\n');
+  } catch (_) { /* 指标日志失败不中断邮件 */ }
+}
