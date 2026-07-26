@@ -35,6 +35,7 @@ GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "")
 # qwen-max 单价（USD / 1M tokens），与 token-management/config/providers.yaml 保持一致
 _COST_TABLE: dict[str, tuple[float, float]] = {
     "qwen/qwen3.6-27b": (0.0, 0.0),  # Groq 免费层
+    "deepseek-v4-flash": (0.14, 0.28),
     "qwen-max":   (0.04,  0.12),
     "qwen-plus":  (0.004, 0.012),
     "qwen-turbo": (0.002, 0.006),
@@ -54,6 +55,8 @@ def _calc_cost(model: str, input_tokens: int, output_tokens: int) -> float:
 
 
 def _infer_provider(model: str) -> str:
+    if model.startswith("deepseek"):
+        return "deepseek"
     if model.startswith("qwen/qwen3.6-27b"):
         return "groq"
     if any(model.startswith(k) for k in _GLM_COST_TABLE):
@@ -64,6 +67,7 @@ def _infer_provider(model: str) -> str:
 def _infer_provider_from_model(model: str) -> str:
     """从模型名推断 provider（宽松匹配）。"""
     m = model.lower()
+    if "deepseek" in m:       return "deepseek"
     if "glm" in m:            return "zhipu"
     if "llama" in m:          return "groq"
     if "ernie" in m:          return "baidu"
@@ -164,6 +168,9 @@ def report_to_gateway(usage_info: dict, project: str) -> None:
         "cost_usd":      round(cost, 6),
         "latency_ms":    0,
         "status":        "success",
+        "experiment":    "deepseek-v4-flash_vs_qwen-max",
+        "experiment_date": usage_info.get("experiment_date", ""),
+        "scheduled_provider": usage_info.get("scheduled_provider", ""),
     }
     _append_local(local_record)
 

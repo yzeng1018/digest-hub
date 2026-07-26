@@ -26,7 +26,8 @@ jobs:
         env:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
-          GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
+          DEEPSEEK_API_KEY:   ${{ secrets.DEEPSEEK_API_KEY }}
+          QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           CHANNEL_NAME:       digest-hub/ai-info
         run: node channels/ai-info/main.js
 
@@ -62,7 +63,8 @@ jobs:
         env:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
-          GROQ_API_KEY:       ${{ secrets.GROQ_API_KEY }}
+          DEEPSEEK_API_KEY:   ${{ secrets.DEEPSEEK_API_KEY }}
+          QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           CHANNEL_NAME:       digest-hub/investment
         run: python channels/investment/main.py
 

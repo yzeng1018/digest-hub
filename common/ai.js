@@ -1,7 +1,9 @@
 /**
- * 公共 AI 调用模块
+ * 公共 AI 调用模块。
  *
- * 只调用 Groq 免费层上的 Qwen，避免任何付费模型费用。
+ * A/B 实验：DeepSeek V4 Flash 与 Qwen Max 按频道、按北京时间日期轮转。
+ * 同一次 digest 的评分和 enrich 始终使用同一个实验臂；首选不可用时才
+ * 降级到另一臂，最终邮件会展示实际响应的模型名。
  */
 
 import OpenAI from 'openai';
@@ -12,75 +14,137 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const _LOCAL_LOG = join(__dirname, '..', 'data', 'usage.jsonl');
 
-function _appendLocal({ provider, model, response, project = '' }) {
+const DEEPSEEK_URL   = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
+const DEEPSEEK_KEY   = process.env.DEEPSEEK_API_KEY || '';
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
+
+const QWEN_URL   = process.env.QWEN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+const QWEN_KEY   = process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY || '';
+const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen-max';
+
+const CHANNEL_SLOTS = {
+  'digest-hub/crypto': 0,
+  'digest-hub/investment': 0,
+  'digest-hub/ai-info': 1,
+  'digest-hub/product-radar': 1,
+  'digest-hub/growth-weekly': 0,
+  'digest-hub/product-radar-weekly': 1,
+};
+
+function beijingDateString(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(p => [p.type, p.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function epochDay(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
+function fallbackSlot(channel) {
+  return Array.from(channel).reduce((sum, ch) => sum + ch.codePointAt(0), 0) % 2;
+}
+
+/** Pure selector exported for local verification. */
+export function selectModel(
+  channel = process.env.CHANNEL_NAME || 'digest-hub',
+  dateString = process.env.MODEL_AB_DATE || beijingDateString(),
+  override = (process.env.MODEL_AB_OVERRIDE || '').toLowerCase(),
+) {
+  if (override === 'deepseek' || override === 'qwen') return override;
+  const slot = CHANNEL_SLOTS[channel] ?? fallbackSlot(channel);
+  return (epochDay(dateString) + slot) % 2 === 0 ? 'deepseek' : 'qwen';
+}
+
+const CHANNEL = process.env.CHANNEL_NAME || 'digest-hub';
+const AB_DATE = process.env.MODEL_AB_DATE || beijingDateString();
+const SELECTED_PROVIDER = selectModel(CHANNEL, AB_DATE);
+let activeProvider = null;
+
+function providerConfig(provider) {
+  if (provider === 'deepseek') {
+    return { provider, baseURL: DEEPSEEK_URL, apiKey: DEEPSEEK_KEY, model: DEEPSEEK_MODEL };
+  }
+  return { provider: 'qwen', baseURL: QWEN_URL, apiKey: QWEN_KEY, model: QWEN_MODEL };
+}
+
+function appendLocal({ provider, model, response, scheduledProvider }) {
   try {
     mkdirSync(join(__dirname, '..', 'data'), { recursive: true });
     const u = response?.usage || {};
     const record = {
-      ts:            new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+      ts: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
       provider,
       model,
-      project:       project || process.env.CHANNEL_NAME || 'digest-hub',
-      input_tokens:  u.prompt_tokens     || 0,
+      project: CHANNEL,
+      input_tokens: u.prompt_tokens || 0,
       output_tokens: u.completion_tokens || 0,
-      cost_usd:      0,
-      latency_ms:    0,
-      status:        'success',
+      cost_usd: 0,
+      latency_ms: 0,
+      status: 'success',
+      experiment: 'deepseek-v4-flash_vs_qwen-max',
+      experiment_date: AB_DATE,
+      scheduled_provider: scheduledProvider,
     };
     appendFileSync(_LOCAL_LOG, JSON.stringify(record) + '\n');
   } catch (_) { /* 日志写入失败不中断主流程 */ }
 }
 
-// 固定 Groq 免费层上的 Qwen 模型，不接受环境变量覆盖，防止误切到付费模型。
-const GROQ_URL   = 'https://api.groq.com/openai/v1';
-const GROQ_KEY   = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = 'qwen/qwen3.6-27b';
-
-/**
- * 调用 LLM，返回 { response, backend }。
- * @param {Array<{role: string, content: string}>} messages
- * @param {number} maxTokens
- * @returns {Promise<{response: object, backend: string}>}
- */
-export async function callAI(messages, maxTokens = 4096) {
-  if (!GROQ_KEY) throw new Error('免费 AI 服务不可用：未配置 GROQ_API_KEY');
-  const c = new OpenAI({ baseURL: GROQ_URL, apiKey: GROQ_KEY });
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const r = await c.chat.completions.create({
-        model: GROQ_MODEL,
-        messages,
-        max_tokens: maxTokens,
-        reasoning_effort: 'none',
-      });
-      _appendLocal({ provider: 'groq', model: GROQ_MODEL, response: r });
-      return { response: r, backend: 'groq' };
-    } catch (err) {
-      if (err?.status !== 429 || attempt === 2) throw err;
-      const header = err?.headers?.get?.('retry-after') ?? err?.headers?.['retry-after'];
-      const parsed = Number(header);
-      const delaySeconds = Number.isFinite(parsed)
-        ? Math.min(90, Math.max(1, parsed))
-        : 30 * (attempt + 1);
-      console.log(`  [groq] 触发免费层限流，${delaySeconds} 秒后重试…`);
-      await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
-    }
+async function callProvider(config, messages, maxTokens) {
+  if (!config.apiKey) throw new Error(`未配置 ${config.provider} API key`);
+  const client = new OpenAI({ baseURL: config.baseURL, apiKey: config.apiKey });
+  const options = {
+    model: config.model,
+    messages,
+    max_tokens: maxTokens,
+  };
+  // 摘要与 JSON 评分更需要稳定格式，关闭 DeepSeek 的思考模式。
+  if (config.provider === 'deepseek') {
+    options.extra_body = { thinking: { type: 'disabled' } };
   }
-  throw new Error('Groq 请求重试失败');
+  return client.chat.completions.create(options);
 }
 
 /**
- * 简化版：直接返回 LLM 文本输出，适合 enrich 场景。
- *
- * @param {string} systemPrompt
- * @param {string} userMsg
- * @param {number} maxTokens
- * @returns {Promise<string>}
+ * 调用 LLM，返回 { response, backend }。
+ * 首选实验臂失败时降级到另一臂，保证日报尽量送达。
  */
+export async function callAI(messages, maxTokens = 8192) {
+  const fallback = SELECTED_PROVIDER === 'deepseek' ? 'qwen' : 'deepseek';
+  let firstError;
+
+  const candidates = activeProvider ? [activeProvider] : [SELECTED_PROVIDER, fallback];
+  console.log(`  [A/B] ${AB_DATE} · ${CHANNEL} → ${activeProvider || SELECTED_PROVIDER}`);
+  for (const provider of candidates) {
+    const config = providerConfig(provider);
+    try {
+      const response = await callProvider(config, messages, maxTokens);
+      appendLocal({
+        provider,
+        model: response.model || config.model,
+        response,
+        scheduledProvider: SELECTED_PROVIDER,
+      });
+      if (provider !== SELECTED_PROVIDER) {
+        console.log(`  [A/B] ${SELECTED_PROVIDER} 不可用，已降级到 ${provider}`);
+      }
+      activeProvider = provider;
+      return { response, backend: provider };
+    } catch (err) {
+      firstError ||= err;
+      console.log(`  [${provider}] 调用失败: ${err?.message || err}`);
+    }
+  }
+  throw firstError || new Error('DeepSeek 与 Qwen 均不可用');
+}
+
 export async function callAIText(systemPrompt, userMsg, maxTokens = 1024) {
   const messages = [
     { role: 'system', content: systemPrompt },
-    { role: 'user',   content: userMsg },
+    { role: 'user', content: userMsg },
   ];
   const { response } = await callAI(messages, maxTokens);
   return response.choices[0].message.content || '';

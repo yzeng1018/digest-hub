@@ -19,7 +19,20 @@ GitHub Actions expects these repository secrets:
 
 - `GMAIL_APP_PASSWORD`: Gmail 16-character app password. Required for email delivery.
 - `DIGEST_RECIPIENT`: Email recipient. If omitted, code defaults to the sender address.
-- `GROQ_API_KEY`: Groq API key for the free `qwen/qwen3.6-27b` model. All AI calls are pinned to this model; paid-model environment variables are ignored.
+- `DEEPSEEK_API_KEY`: DeepSeek API key for `deepseek-v4-flash`.
+- `QWEN_API_KEY`: Alibaba Cloud Model Studio key for `qwen-max`.
+
+## Model A/B Experiment
+
+DeepSeek V4 Flash and Qwen Max rotate daily using the Beijing calendar. The four
+daily emails are balanced 2:2, and every channel switches model the next day.
+The model printed in each email is the model that actually produced the result.
+
+Optional controls:
+
+- `MODEL_AB_OVERRIDE=deepseek` or `MODEL_AB_OVERRIDE=qwen` forces one arm.
+- `MODEL_AB_DATE=2026-07-27` reproduces the assignment for a specific date.
+- `DEEPSEEK_MODEL`, `QWEN_MODEL`, and `QWEN_BASE_URL` override provider settings.
 
 ## Local Runs
 

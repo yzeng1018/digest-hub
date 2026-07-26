@@ -1,8 +1,4 @@
-"""
-通用评分模块。
-system_prompt、batch_size、summary_fn 由各 channel 的 config 传入，
-使同一套 API 调用逻辑可服务于不同视角的评分需求。
-"""
+"""公共评分模块，以及 DeepSeek V4 Flash / Qwen Max A/B 轮转。"""
 
 import json
 import math
@@ -10,111 +6,147 @@ import os
 import re
 import time
 from collections.abc import Callable
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
-import httpx
 from openai import OpenAI
 
-# 固定 Groq 免费层上的 Qwen 模型，不接受环境变量覆盖，防止误切到付费模型。
-GROQ_URL   = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "qwen/qwen3.6-27b"
+DEEPSEEK_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")
+QWEN_URL = os.environ.get(
+    "QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+)
+QWEN_MODEL = os.environ.get("QWEN_MODEL", "qwen-max")
 
-# 模块级 usage 累计器，每次 score_articles 调用前重置
-_usage: dict = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
-
-# 模块级 metrics 累计器
-_metrics: dict = {
-    "batches_total":   0,
-    "batches_parsed":  0,  # JSON 解析成功的批次数
+_CHANNEL_SLOTS = {
+    "digest-hub/crypto": 0,
+    "digest-hub/investment": 0,
+    "digest-hub/ai-info": 1,
+    "digest-hub/product-radar": 1,
+    "digest-hub/growth-weekly": 0,
+    "digest-hub/product-radar-weekly": 1,
 }
 
 
+def select_model(
+    channel: str | None = None,
+    date_string: str | None = None,
+    override: str | None = None,
+) -> str:
+    """返回 deepseek 或 qwen；参数可注入，便于本地验证轮转表。"""
+    channel = channel or os.environ.get("CHANNEL_NAME", "digest-hub")
+    date_string = date_string or os.environ.get("MODEL_AB_DATE") or datetime.now(
+        ZoneInfo("Asia/Shanghai")
+    ).strftime("%Y-%m-%d")
+    override = (override or os.environ.get("MODEL_AB_OVERRIDE", "")).lower()
+    if override in {"deepseek", "qwen"}:
+        return override
+
+    slot = _CHANNEL_SLOTS.get(channel, sum(map(ord, channel)) % 2)
+    current = date.fromisoformat(date_string)
+    epoch_days = (current - date(1970, 1, 1)).days
+    return "deepseek" if (epoch_days + slot) % 2 == 0 else "qwen"
+
+
+_CHANNEL = os.environ.get("CHANNEL_NAME", "digest-hub")
+_AB_DATE = os.environ.get("MODEL_AB_DATE") or datetime.now(
+    ZoneInfo("Asia/Shanghai")
+).strftime("%Y-%m-%d")
+_SELECTED_PROVIDER = select_model(_CHANNEL, _AB_DATE)
+_active_provider: str | None = None
+
+_usage: dict = {
+    "model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0,
+    "scheduled_provider": _SELECTED_PROVIDER, "experiment_date": _AB_DATE,
+}
+_metrics: dict = {"batches_total": 0, "batches_parsed": 0}
+
+
 def get_usage() -> dict:
-    """返回最近一次 score_articles 调用的 token 消耗统计。"""
     return dict(_usage)
 
 
 def get_metrics(articles: list[dict]) -> dict:
-    """
-    根据已完成评分的文章列表，计算模型表现指标。
-    需在 score_articles 调用结束后调用。
-
-    返回：
-      parse_rate       — JSON 解析成功率 0-1
-      score_spread     — 评分标准差（区分度，目标 ~2.0）
-      translation_rate — 有 title_zh 的文章比例
-      perf_score       — 综合得分 0-10
-        计算公式：parse_rate×4 + min(score_spread/3,1)×3 + translation_rate×3
-    """
-    total   = _metrics["batches_total"]
-    parsed  = _metrics["batches_parsed"]
-    parse_rate = (parsed / total) if total > 0 else 0.0
-
+    total = _metrics["batches_total"]
+    parsed = _metrics["batches_parsed"]
+    parse_rate = parsed / total if total else 0.0
     scores = [a.get("score", 0) for a in articles if a.get("score", 0) > 0]
     if len(scores) >= 2:
         mean = sum(scores) / len(scores)
-        variance = sum((s - mean) ** 2 for s in scores) / len(scores)
-        score_spread = math.sqrt(variance)
+        score_spread = math.sqrt(sum((s - mean) ** 2 for s in scores) / len(scores))
     else:
         score_spread = 0.0
-
-    translated = sum(1 for a in articles if a.get("title_zh") and a["title_zh"] != a.get("title"))
-    translation_rate = (translated / len(articles)) if articles else 0.0
-
+    translated = sum(
+        1 for a in articles if a.get("title_zh") and a["title_zh"] != a.get("title")
+    )
+    translation_rate = translated / len(articles) if articles else 0.0
     perf_score = round(
-        parse_rate * 4.0
-        + min(score_spread / 3.0, 1.0) * 3.0
-        + translation_rate * 3.0,
+        parse_rate * 4
+        + min(score_spread / 3, 1) * 3
+        + translation_rate * 3,
         2,
     )
-
     return {
-        "parse_rate":       round(parse_rate, 3),
-        "score_spread":     round(score_spread, 2),
+        "parse_rate": round(parse_rate, 3),
+        "score_spread": round(score_spread, 2),
         "translation_rate": round(translation_rate, 3),
-        "perf_score":       perf_score,
-        "article_count":    len(articles),
+        "perf_score": perf_score,
+        "article_count": len(articles),
     }
 
 
-def call_ai(messages: list, **kwargs):
-    """
-    公共 AI 调用入口（供 enricher 等模块使用）。
-    只调用 Groq 免费层上的 Qwen，返回 response 对象。
-    """
-    resp, _ = _complete(messages, **kwargs)
-    return resp
+def _provider_config(provider: str) -> dict:
+    if provider == "deepseek":
+        return {
+            "provider": provider,
+            "base_url": DEEPSEEK_URL,
+            "api_key": os.environ.get("DEEPSEEK_API_KEY", ""),
+            "model": DEEPSEEK_MODEL,
+        }
+    return {
+        "provider": "qwen",
+        "base_url": QWEN_URL,
+        "api_key": os.environ.get("QWEN_API_KEY")
+        or os.environ.get("DASHSCOPE_API_KEY", ""),
+        "model": QWEN_MODEL,
+    }
+
+
+def _call_provider(config: dict, messages: list, **kwargs):
+    if not config["api_key"]:
+        raise RuntimeError(f"未配置 {config['provider']} API key")
+    client = OpenAI(api_key=config["api_key"], base_url=config["base_url"])
+    if config["provider"] == "deepseek":
+        kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
+    return client.chat.completions.create(
+        model=config["model"], messages=messages, **kwargs
+    )
 
 
 def _complete(messages: list, **kwargs):
-    """
-    单一免费直连：Groq qwen/qwen3.6-27b。
-    """
-    groq_key = os.environ.get("GROQ_API_KEY", "")
-    if not groq_key:
-        raise RuntimeError("免费 AI 服务不可用：未配置 GROQ_API_KEY")
-    print(f"  [groq] 使用免费模型 {GROQ_MODEL}…")
-    c = OpenAI(api_key=groq_key, base_url=GROQ_URL)
-    for attempt in range(3):
+    global _active_provider
+    fallback = "qwen" if _SELECTED_PROVIDER == "deepseek" else "deepseek"
+    first_error: Exception | None = None
+    candidates = (_active_provider,) if _active_provider else (_SELECTED_PROVIDER, fallback)
+    print(f"  [A/B] {_AB_DATE} · {_CHANNEL} → {_active_provider or _SELECTED_PROVIDER}")
+    for provider in candidates:
+        config = _provider_config(provider)
         try:
-            resp = c.chat.completions.create(
-                model=GROQ_MODEL,
-                messages=messages,
-                extra_body={"reasoning_effort": "none"},
-                **kwargs,
-            )
-            return resp, "groq"
+            response = _call_provider(config, messages, **kwargs)
+            if provider != _SELECTED_PROVIDER:
+                print(f"  [A/B] {_SELECTED_PROVIDER} 不可用，已降级到 {provider}")
+            _active_provider = provider
+            return response, provider
         except Exception as exc:
-            if getattr(exc, "status_code", None) != 429 or attempt == 2:
-                raise
-            headers = getattr(getattr(exc, "response", None), "headers", {})
-            try:
-                delay = min(90.0, max(1.0, float(headers.get("retry-after", 30))))
-            except (TypeError, ValueError):
-                delay = 30.0 * (attempt + 1)
-            print(f"  [groq] 触发免费层限流，{delay:g} 秒后重试…")
-            time.sleep(delay)
+            first_error = first_error or exc
+            print(f"  [{provider}] 调用失败: {exc}")
+    raise first_error or RuntimeError("DeepSeek 与 Qwen 均不可用")
 
-    raise RuntimeError("Groq 请求重试失败")
+
+def call_ai(messages: list, **kwargs):
+    response, _ = _complete(messages, **kwargs)
+    return response
+
 
 USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
 
@@ -126,8 +158,7 @@ USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
     "reason_zh": "一句话说明价值（20字以内）",
     "title_zh": "中文标题",
     "summary_zh": "中文摘要4-6句，充分展开背景、核心内容和价值，不要过于简短"
-  }},
-  ...
+  }}
 ]
 
 内容列表：
@@ -151,91 +182,75 @@ def _parse_response(text: str) -> list[dict]:
 
 
 def _apply_results(articles: list[dict], results: list[dict]) -> None:
-    index = {r["id"]: r for r in results}
+    index = {str(r.get("id")): r for r in results}
     for i, art in enumerate(articles):
-        r = index.get(str(i))
-        if not r:
+        result = index.get(str(i))
+        if not result:
             art["score"] = art.get("score") or 3
             art["reason_zh"] = art.get("reason_zh") or ""
             art["title_zh"] = art.get("title_zh") or art["title"]
             art["summary_zh"] = art.get("summary_zh") or art["summary"]
             continue
-        art["score"] = int(r.get("score", 3))
-        art["reason_zh"] = r.get("reason_zh", "")
-        art["title_zh"] = r.get("title_zh") or art["title"]
-        art["summary_zh"] = r.get("summary_zh") or art["summary"]
+        art["score"] = int(result.get("score", 3))
+        art["reason_zh"] = result.get("reason_zh", "")
+        art["title_zh"] = result.get("title_zh") or art["title"]
+        art["summary_zh"] = result.get("summary_zh") or art["summary"]
 
 
 def score_articles(
     articles: list[dict],
     system_prompt: str,
-    batch_size: int = 15,
+    batch_size: int = 10,
     summary_fn: Callable[[dict], str] | None = None,
 ) -> list[dict]:
-    """
-    对文章列表评分 + 翻译，修改原列表并返回。
-    summary_fn: 从 article dict 提取送给模型的摘要文本，默认取 summary[:300]。
-    调用结束后可通过 get_usage() 获取 token 消耗，get_metrics() 获取模型表现。
-    """
     global _usage, _metrics
-    _usage   = {"model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    _usage = {
+        "model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0,
+        "scheduled_provider": _SELECTED_PROVIDER, "experiment_date": _AB_DATE,
+    }
     _metrics = {"batches_total": 0, "batches_parsed": 0}
-
-    if summary_fn is None:
-        summary_fn = _default_summary_fn
+    summary_fn = summary_fn or _default_summary_fn
 
     for batch_start in range(0, len(articles), batch_size):
-        if batch_start > 0:
-            time.sleep(2)  # 避免智谱 429 速率限制
-        batch = articles[batch_start: batch_start + batch_size]
+        if batch_start:
+            time.sleep(2)
+        batch = articles[batch_start:batch_start + batch_size]
         print(f"  评分 [{batch_start + 1}–{batch_start + len(batch)}] …")
-
         items = [
             {
-                "id": str(i),
-                "platform": art.get("platform", ""),
-                "source": art["source"],
-                "lang": art["lang"],
-                "title": art["title"],
-                "summary": summary_fn(art),
+                "id": str(i), "platform": art.get("platform", ""),
+                "source": art["source"], "lang": art["lang"],
+                "title": art["title"], "summary": summary_fn(art),
             }
             for i, art in enumerate(batch)
         ]
-        payload = json.dumps(items, ensure_ascii=False, indent=2)
-        user_msg = USER_PROMPT_TEMPLATE.format(count=len(batch), articles_json=payload)
-
+        user_msg = USER_PROMPT_TEMPLATE.format(
+            count=len(batch), articles_json=json.dumps(items, ensure_ascii=False, indent=2)
+        )
         _metrics["batches_total"] += 1
         try:
-            resp, backend = _complete(
+            response, backend = _complete(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_msg},
                 ],
-                max_tokens=4096,
+                max_tokens=8192,
                 timeout=120,
             )
-            # 累计 token 消耗
-            if resp.usage:
-                _usage["prompt_tokens"]     += resp.usage.prompt_tokens
-                _usage["completion_tokens"] += resp.usage.completion_tokens
-                _usage["total_tokens"]      += resp.usage.total_tokens
-            # 记录实际模型名（优先用响应中的）
+            if response.usage:
+                _usage["prompt_tokens"] += response.usage.prompt_tokens
+                _usage["completion_tokens"] += response.usage.completion_tokens
+                _usage["total_tokens"] += response.usage.total_tokens
             if not _usage["model"]:
-                _usage["model"] = getattr(resp, "model", "") or GROQ_MODEL
-            results = _parse_response(resp.choices[0].message.content or "")
+                _usage["model"] = getattr(response, "model", "") or _provider_config(backend)["model"]
+            results = _parse_response(response.choices[0].message.content or "")
             if results:
                 _metrics["batches_parsed"] += 1
             _apply_results(batch, results)
         except Exception as exc:
             print(f"  [ERROR] Scoring batch failed: {exc}")
-            for art in batch:
-                art["score"] = art.get("score") or 3
-                art["reason_zh"] = art.get("reason_zh") or ""
-                art["title_zh"] = art.get("title_zh") or art["title"]
-                art["summary_zh"] = art.get("summary_zh") or art["summary"]
+            _apply_results(batch, [])
 
-    # 兜底：若所有批次均失败，确保 model 字段有值
     if not _usage["model"]:
         _usage["model"] = "gateway/blocked"
-
     return articles
