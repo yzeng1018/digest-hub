@@ -13,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from config import ENRICH_MIN_SCORE, ENRICH_MAX_COUNT, ENRICH_SYSTEM_PROMPT
+from portfolio import portfolio_context
 
 import sys
 from pathlib import Path
@@ -59,8 +60,10 @@ def _ddg_search(query: str, max_results: int = 3) -> list[str]:
         return []
 
 
-def _enrich_one(art: dict) -> None:
-    body = _fetch_article_body(art.get("url", ""))
+def _enrich_one(art: dict, watchlist: list[dict]) -> None:
+    # Google News links often resolve to an interstitial rather than the article.
+    # A fresh search gives portfolio stories more independent context.
+    body = "" if art.get("platform") == "Portfolio" else _fetch_article_body(art.get("url", ""))
 
     if body:
         context_label   = "文章正文"
@@ -77,6 +80,8 @@ def _enrich_one(art: dict) -> None:
     user_msg = f"""文章标题：{art['title']}
 来源：{art['source']}
 当前摘要：{(art.get('summary') or '')[:300]}
+直接匹配持仓：{'、'.join(art.get('portfolio_matches', [])) or '无'}
+重点持仓观察名单：{portfolio_context(watchlist)}
 
 {context_label}：
 {search_context}
@@ -96,14 +101,23 @@ def _enrich_one(art: dict) -> None:
         art["background_zh"]  = data.get("background_zh", "")
         art["key_players_zh"] = data.get("key_players_zh", "")
         art["data_point_zh"]  = data.get("data_point_zh", "")
+        art["portfolio_relevance_zh"] = data.get("portfolio_relevance_zh", "")
+        art["investment_angle_zh"] = data.get("investment_angle_zh", "")
+        art["confirmation_signal_zh"] = data.get("confirmation_signal_zh", "")
+        art["risk_zh"] = data.get("risk_zh", "")
     except Exception as exc:
         print(f"    [ENRICH WARN] {art['title'][:40]}: {exc}")
         art["background_zh"]  = ""
         art["key_players_zh"] = ""
         art["data_point_zh"]  = ""
+        art["portfolio_relevance_zh"] = ""
+        art["investment_angle_zh"] = ""
+        art["confirmation_signal_zh"] = ""
+        art["risk_zh"] = ""
 
 
-def enrich_articles(articles: list[dict]) -> list[dict]:
+def enrich_articles(articles: list[dict], watchlist: list[dict] | None = None) -> list[dict]:
+    watchlist = watchlist or []
     targets = [a for a in articles if a.get("score", 0) >= ENRICH_MIN_SCORE][:ENRICH_MAX_COUNT]
 
     if not targets:
@@ -111,17 +125,25 @@ def enrich_articles(articles: list[dict]) -> list[dict]:
             art.setdefault("background_zh", "")
             art.setdefault("key_players_zh", "")
             art.setdefault("data_point_zh", "")
+            art.setdefault("portfolio_relevance_zh", "")
+            art.setdefault("investment_angle_zh", "")
+            art.setdefault("confirmation_signal_zh", "")
+            art.setdefault("risk_zh", "")
         return articles
 
     print(f"Enriching {len(targets)} top investment articles…")
 
     for i, art in enumerate(targets, 1):
         print(f"  [{i}/{len(targets)}] {art['title'][:55]}…")
-        _enrich_one(art)
+        _enrich_one(art, watchlist)
 
     for art in articles:
         art.setdefault("background_zh", "")
         art.setdefault("key_players_zh", "")
         art.setdefault("data_point_zh", "")
+        art.setdefault("portfolio_relevance_zh", "")
+        art.setdefault("investment_angle_zh", "")
+        art.setdefault("confirmation_signal_zh", "")
+        art.setdefault("risk_zh", "")
 
     return articles

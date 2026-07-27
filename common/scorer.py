@@ -76,10 +76,15 @@ def get_metrics(articles: list[dict]) -> dict:
         score_spread = math.sqrt(sum((s - mean) ** 2 for s in scores) / len(scores))
     else:
         score_spread = 0.0
+    english_articles = [a for a in articles if a.get("lang") == "en"]
     translated = sum(
-        1 for a in articles if a.get("title_zh") and a["title_zh"] != a.get("title")
+        1 for a in english_articles
+        if a.get("title_zh") and a["title_zh"] != a.get("title")
     )
-    translation_rate = translated / len(articles) if articles else 0.0
+    # Chinese originals do not need translation and must not depress the metric.
+    translation_rate = (
+        translated / len(english_articles) if english_articles else 1.0
+    )
     perf_score = round(
         parse_rate * 4
         + min(score_spread / 3, 1) * 3

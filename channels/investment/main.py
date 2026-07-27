@@ -16,7 +16,11 @@ from fetcher  import fetch_all
 from enricher import enrich_articles
 from renderer import render
 from mailer   import send_digest
-from config   import MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT, INSIGHT_MIN_RATIO, SOURCE_CAPS
+from config   import (
+    MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT, INSIGHT_MIN_RATIO,
+    INSIGHT_MIN_SCORE, PORTFOLIO_MIN_COUNT, PORTFOLIO_MIN_SCORE, SOURCE_CAPS,
+)
+from portfolio import load_portfolio_watchlist, portfolio_context
 
 from common.dedup     import deduplicate
 from common.scorer    import score_articles, get_usage, get_metrics
@@ -42,26 +46,54 @@ def _apply_source_caps(articles: list[dict], caps: dict[str, int]) -> list[dict]
 
 
 def _apply_insight_quota(
-    articles: list[dict], max_n: int, min_ratio: float
+    articles: list[dict], max_n: int, min_ratio: float,
+    portfolio_min: int = PORTFOLIO_MIN_COUNT,
 ) -> list[dict]:
     """
     从已按分数排序的文章中取最终 max_n 条，
-    同时保证 Blog/Memo/Podcast 至少占 min_ratio。
-    策略：先满足配额槽，剩余槽按分数填充。
+    优先保证“有信息增量”的持仓新闻和深度内容配额；低分内容不为凑数入选。
+    未用完的配额槽按全局分数回填。
     """
+    articles = sorted(articles, key=lambda a: -a.get("score", 0))
     min_insight = max(1, int(max_n * min_ratio))
+    portfolio = [
+        a for a in articles
+        if a.get("platform") == "Portfolio" and a.get("score", 0) >= PORTFOLIO_MIN_SCORE
+    ]
+    insight = [
+        a for a in articles
+        if a.get("platform") in _INSIGHT_PLATFORMS and a.get("score", 0) >= INSIGHT_MIN_SCORE
+    ]
 
-    insight = [a for a in articles if a.get("platform") in _INSIGHT_PLATFORMS]
-    news    = [a for a in articles if a.get("platform") not in _INSIGHT_PLATFORMS]
+    result: list[dict] = []
+    seen: set[str] = set()
 
-    # 取配额数量的 insight（已按分数排序）
-    picked_insight = insight[:min_insight]
-    # 剩余槽位用新闻填满
-    remaining = max_n - len(picked_insight)
-    picked_news = news[:remaining]
+    def add(candidates: list[dict], count: int) -> None:
+        if count <= 0:
+            return
+        added = 0
+        for article in candidates:
+            key = article.get("id") or article.get("url") or article.get("title", "")
+            if key in seen:
+                continue
+            result.append(article)
+            seen.add(key)
+            added += 1
+            if added >= count:
+                break
 
-    # 合并后重新按分数排序，让邮件里高分内容排前面
-    result = picked_insight + picked_news
+    add(portfolio, min(portfolio_min, max_n))
+    add(insight, min(min_insight, max_n - len(result)))
+    # Always backfill unused quota slots from the globally ranked list. The old
+    # implementation could return only a handful of stories on a quiet news day.
+    for article in articles:
+        if len(result) >= max_n:
+            break
+        key = article.get("id") or article.get("url") or article.get("title", "")
+        if key not in seen:
+            result.append(article)
+            seen.add(key)
+
     result.sort(key=lambda a: -a["score"])
     return result
 
@@ -73,6 +105,7 @@ def main():
     parser.add_argument("--output",   default="")
     args = parser.parse_args()
 
+    watchlist = load_portfolio_watchlist()
     articles = fetch_all()
     if not articles:
         print("No articles fetched. Check your network / sources.")
@@ -93,7 +126,12 @@ def main():
         model_metrics = {}
     else:
         print(f"Scoring {len(articles)} articles…")
-        articles = score_articles(articles, SCORING_SYSTEM_PROMPT, batch_size=10)
+        scoring_prompt = (
+            SCORING_SYSTEM_PROMPT
+            + "\n当前重点持仓观察名单："
+            + portfolio_context(watchlist)
+        )
+        articles = score_articles(articles, scoring_prompt, batch_size=10)
         usage_info    = get_usage()
         model_metrics = get_metrics(articles)
         report_to_gateway(usage_info, project="digest-hub/investment")
@@ -104,7 +142,7 @@ def main():
     articles = _apply_insight_quota(articles, MAX_ARTICLES, INSIGHT_MIN_RATIO)
 
     if not args.no_score:
-        articles = enrich_articles(articles)
+        articles = enrich_articles(articles, watchlist=watchlist)
     else:
         for art in articles:
             art["background_zh"]  = ""

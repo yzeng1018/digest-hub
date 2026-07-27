@@ -5,7 +5,46 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from datetime import datetime
+from html import escape
 from common.mailer import send_html
+
+
+def _section(art: dict) -> tuple[str, str]:
+    if art.get("platform") == "Portfolio":
+        return "portfolio", "🎯 持仓雷达"
+    if art.get("platform") in {"Blog", "Memo", "Podcast"}:
+        return "insight", "🧠 投资框架"
+    return "market", "🌍 中外市场机会"
+
+
+def _display_order(articles: list[dict]) -> list[dict]:
+    rank = {"portfolio": 0, "market": 1, "insight": 2}
+    return sorted(articles, key=lambda a: (rank[_section(a)[0]], -a.get("score", 0)))
+
+
+def _ideas_email(articles: list[dict]) -> str:
+    ideas = [a for a in articles if a.get("investment_angle_zh")][:3]
+    if not ideas:
+        return ""
+    rows = ""
+    for article in ideas:
+        label = "、".join(article.get("portfolio_matches", []))
+        label = label or article.get("portfolio_sector") or "市场线索"
+        signal = article.get("confirmation_signal_zh", "")
+        rows += (
+            '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f3dfb3;'
+            'font-size:13px;line-height:1.6;">'
+            f'<b style="color:#9c5b00;">{escape(label)}</b>'
+            f'<div>{escape(article["investment_angle_zh"])}</div>'
+            + (f'<div style="color:#2b8a3e;font-size:12px;">验证：{escape(signal)}</div>' if signal else "")
+            + '</div>'
+        )
+    return (
+        '<tr><td style="padding:16px 20px;background:#fff9e8;border-bottom:1px solid #f3dfb3;">'
+        '<div style="font-size:16px;font-weight:800;color:#9c5b00;">💡 今日投资线索</div>'
+        '<div style="font-size:11px;color:#8c7a55;margin-top:3px;">基于新闻的研究假设，不是买卖建议。</div>'
+        f'{rows}</td></tr>'
+    )
 
 
 def _score_color(score: int) -> str:
@@ -48,7 +87,7 @@ def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
         color = _perf_color(ps)
         perf_html = (
             f'&nbsp;·&nbsp;'
-            f'<span style="color:{color};font-weight:700;">评分 {ps}/10</span>'
+            f'<span style="color:{color};font-weight:700;">流水线质量 {ps}/10</span>'
             f'&nbsp;(解析率 {pr}% · 翻译率 {tr}% · 区分度 {ss:.1f}σ)'
         )
 
@@ -64,7 +103,16 @@ def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
 
 def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | None = None, model_metrics: dict | None = None) -> str:
     rows = ""
-    for art in articles:
+    current_section = ""
+    for art in _display_order(articles):
+        section_key, section_title = _section(art)
+        if section_key != current_section:
+            rows += (
+                '<tr><td style="padding:15px 20px 9px;background:#f8f9fa;'
+                'font-size:15px;font-weight:800;color:#343a40;border-bottom:1px solid #dee2e6;">'
+                f'{section_title}</td></tr>'
+            )
+            current_section = section_key
         sc          = art.get("score", 5)
         color       = _score_color(sc)
         label       = _score_label(sc)
@@ -77,6 +125,10 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
         background  = art.get("background_zh", "")
         key_players = art.get("key_players_zh", "")
         data_point  = art.get("data_point_zh", "")
+        relevance   = art.get("portfolio_relevance_zh", "")
+        angle       = art.get("investment_angle_zh", "")
+        signal      = art.get("confirmation_signal_zh", "")
+        risk        = art.get("risk_zh", "")
         source      = art.get("source", "")
         url         = art.get("url", "#")
 
@@ -84,22 +136,42 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
         if background:
             extra += (
                 f'<div style="margin-top:8px;padding:6px 10px;background:#e8f4fd;'
-                f'border-radius:4px;font-size:12px;color:#1c7ed6;">📖 {background}</div>'
+                f'border-radius:4px;font-size:12px;color:#1c7ed6;">📖 {escape(background)}</div>'
             )
         if key_players:
             extra += (
                 f'<div style="margin-top:6px;padding:6px 10px;background:#fff3cd;'
-                f'border-radius:4px;font-size:12px;color:#856404;">👥 {key_players}</div>'
+                f'border-radius:4px;font-size:12px;color:#856404;">👥 {escape(key_players)}</div>'
             )
         if data_point:
             extra += (
                 f'<div style="margin-top:6px;padding:6px 10px;background:#d4edda;'
-                f'border-radius:4px;font-size:12px;color:#155724;">📊 {data_point}</div>'
+                f'border-radius:4px;font-size:12px;color:#155724;">📊 {escape(data_point)}</div>'
             )
         if reason:
             extra += (
                 f'<div style="margin-top:6px;padding:6px 10px;background:#e2e3e5;'
-                f'border-radius:4px;font-size:12px;color:#383d41;">💡 {reason}</div>'
+                f'border-radius:4px;font-size:12px;color:#383d41;">💡 {escape(reason)}</div>'
+            )
+        if relevance:
+            extra += (
+                f'<div style="margin-top:6px;padding:6px 10px;background:#fff0db;'
+                f'border-radius:4px;font-size:12px;color:#9c4f00;">🎯 {escape(relevance)}</div>'
+            )
+        if angle:
+            extra += (
+                f'<div style="margin-top:6px;padding:6px 10px;background:#eaf2ff;'
+                f'border-radius:4px;font-size:12px;color:#245a9b;">🔎 {escape(angle)}</div>'
+            )
+        if signal:
+            extra += (
+                f'<div style="margin-top:6px;padding:6px 10px;background:#e8f7ec;'
+                f'border-radius:4px;font-size:12px;color:#287a3e;">✅ 验证：{escape(signal)}</div>'
+            )
+        if risk:
+            extra += (
+                f'<div style="margin-top:6px;padding:6px 10px;background:#fff0f0;'
+                f'border-radius:4px;font-size:12px;color:#b4232c;">⚠️ 反证：{escape(risk)}</div>'
             )
 
         rows += f"""
@@ -113,18 +185,18 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
         </td>
         <td valign="top">
           <div style="font-size:15px;font-weight:600;color:#212529;line-height:1.4;">
-            <a href="{url}" style="color:#212529;text-decoration:none;">{title_zh}</a>
+            <a href="{escape(url, quote=True)}" style="color:#212529;text-decoration:none;">{escape(title_zh)}</a>
           </div>
-          {"" if not title_en else f'<div style="font-size:12px;color:#868e96;margin-top:3px;">{title_en}</div>'}
+          {"" if not title_en else f'<div style="font-size:12px;color:#868e96;margin-top:3px;">{escape(title_en)}</div>'}
           <div style="margin-top:6px;">
             <span style="display:inline-block;padding:1px 7px;border-radius:3px;
                          font-size:11px;font-weight:700;color:{color};background:{color}22;">{label}</span>
             <span style="display:inline-block;padding:1px 7px;border-radius:3px;
                          font-size:11px;color:#6c757d;background:#f8f9fa;
-                         border:1px solid #dee2e6;margin-left:4px;">{source}</span>
+                         border:1px solid #dee2e6;margin-left:4px;">{escape(source)}</span>
           </div>
-          <div style="margin-top:8px;font-size:13px;color:#495057;line-height:1.65;">{summary}</div>
-          {"" if not (art.get("lang") == "en" and summary_zh and summary_en and summary_zh != summary_en) else f'<div style="margin-top:5px;font-size:12px;color:#868e96;font-style:italic;line-height:1.5;">{summary_en}</div>'}
+          <div style="margin-top:8px;font-size:13px;color:#495057;line-height:1.65;">{escape(summary)}</div>
+          {"" if not (art.get("lang") == "en" and summary_zh and summary_en and summary_zh != summary_en) else f'<div style="margin-top:5px;font-size:12px;color:#868e96;font-style:italic;line-height:1.5;">{escape(summary_en)}</div>'}
           {extra}
         </td>
       </tr>
@@ -171,12 +243,13 @@ def _build_email_html(articles: list[dict], date_str: str, usage_info: dict | No
     <td style="background:#ffffff;border-radius:0 0 12px 12px;
                border:1px solid #dee2e6;border-top:none;">
       <table width="100%" cellpadding="0" cellspacing="0">
+        {_ideas_email(articles)}
         {rows}
         <tr>
           <td style="padding:14px 20px;text-align:center;background:#f8f9fa;
                      border-radius:0 0 12px 12px;">
             <div style="font-size:11px;color:#adb5bd;">
-              AI 自动生成 · 来源：Crunchbase / TechCrunch / a16z / 投资界
+              AI 自动生成 · 覆盖持仓公司公告聚合、中外财经媒体、投资机构与行业深度内容
             </div>
           </td>
         </tr>

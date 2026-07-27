@@ -13,6 +13,18 @@ Multi-channel digest generator that fetches public sources, deduplicates items, 
 | Growth Weekly | `channels/growth-weekly` | Node.js | Saturday 09:00 Beijing |
 | Product Radar Weekly | `channels/product-radar/main_weekly.py` | Python | Saturday 10:00 Beijing |
 
+### Investment digest
+
+The investment email combines three sections: portfolio-linked company news,
+China/global market opportunities, and high-signal investor research. Locally it
+reads the sibling `portfolio/data/portfolio.json` file to rank coverage by position
+size. GitHub Actions uses `channels/investment/portfolio_watchlist.json`, a privacy-
+safe snapshot containing company names and tickers only. Set `PORTFOLIO_DATA_PATH`
+to use a different local portfolio file.
+
+Portfolio and long-form quota slots have minimum quality scores; low-value price
+recaps and generic startup content are not included just to fill a section.
+
 ## Required Secrets
 
 GitHub Actions expects these repository secrets:

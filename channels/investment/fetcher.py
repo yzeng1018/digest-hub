@@ -12,6 +12,7 @@ import io
 import re
 import time
 from datetime import datetime, timezone, timedelta
+from urllib.parse import urlencode
 
 import feedparser
 import requests
@@ -23,7 +24,9 @@ from config import (
     SOURCES, HN_TOP_COUNT, TIME_WINDOW_HOURS, INSIGHT_WINDOW_DAYS,
     NITTER_INSTANCES, TWITTER_HANDLES, TWITTER_MAX_PER_HANDLE,
     ARK_FUND_CSVS, SEC_13F_SOURCES, SEC_13F_WINDOW_DAYS,
+    PORTFOLIO_SECTOR_QUERIES,
 )
+from portfolio import load_portfolio_watchlist
 
 
 _HEADERS = {
@@ -255,6 +258,165 @@ def _fetch_hn() -> list[dict]:
     return articles
 
 
+# ─── Portfolio news via Google News RSS ──────────────────────────────────────
+
+_PORTFOLIO_QUERY_SIZE = 4
+_PORTFOLIO_MAX_GROUPS = 5
+_PORTFOLIO_MAX_PER_NAME = 2
+
+
+def _portfolio_query_url(items: list[dict]) -> str:
+    terms = []
+    for item in items:
+        aliases = item.get("aliases") or [item["name"]]
+        # One Chinese and/or one canonical English alias is enough; extra aliases
+        # make Google News queries too broad and less reliable.
+        terms.extend(f'"{alias}"' for alias in aliases[:2])
+    query = f"({' OR '.join(terms)}) when:2d"
+    return "https://news.google.com/rss/search?" + urlencode(
+        {"q": query, "hl": "zh-CN", "gl": "CN", "ceid": "CN:zh-Hans"}
+    )
+
+
+def _match_watchlist(text: str, watchlist: list[dict]) -> list[dict]:
+    haystack = text.casefold()
+    matches = []
+    for item in watchlist:
+        aliases = item.get("aliases") or [item["name"]]
+        excluded = item.get("exclude_phrases") or []
+        if any(phrase.casefold() in haystack for phrase in excluded):
+            continue
+        if any(
+            alias.casefold() in haystack
+            for alias in aliases
+            if len(alias) >= 3 or re.search(r"[\u4e00-\u9fff]", alias)
+        ):
+            matches.append(item)
+    return matches
+
+
+def _fetch_portfolio_news(watchlist: list[dict] | None = None) -> list[dict]:
+    """Fetch recent news that explicitly matches companies in the live portfolio."""
+    watchlist = watchlist or load_portfolio_watchlist()
+    selected = watchlist[: _PORTFOLIO_QUERY_SIZE * _PORTFOLIO_MAX_GROUPS]
+    cutoff = datetime.now(timezone.utc) - timedelta(days=2)
+    per_name: dict[str, int] = {}
+    articles = []
+
+    for start in range(0, len(selected), _PORTFOLIO_QUERY_SIZE):
+        group = selected[start : start + _PORTFOLIO_QUERY_SIZE]
+        try:
+            resp = requests.get(
+                _portfolio_query_url(group), timeout=15, headers=_HEADERS, verify=False
+            )
+            resp.raise_for_status()
+            feed = feedparser.parse(resp.content)
+        except Exception as exc:
+            print(f"  [WARN] 持仓雷达 {','.join(x['name'] for x in group)}: {exc}")
+            continue
+
+        for entry in feed.entries:
+            pub = _parse_dt(entry)
+            if pub and pub < cutoff:
+                continue
+            title = getattr(entry, "title", "").strip()
+            summary = _clean(
+                getattr(entry, "summary", "") or getattr(entry, "description", "")
+            )
+            matches = _match_watchlist(f"{title} {summary}", group)
+            if not matches:
+                continue
+            available = [
+                item for item in matches
+                if per_name.get(item["ticker"], 0) < _PORTFOLIO_MAX_PER_NAME
+            ]
+            if not available:
+                continue
+            for item in available:
+                per_name[item["ticker"]] = per_name.get(item["ticker"], 0) + 1
+
+            publisher = ""
+            source_obj = getattr(entry, "source", None)
+            if source_obj:
+                publisher = getattr(source_obj, "title", "") or source_obj.get("title", "")
+            match_names = [item["name"] for item in available]
+            sectors = sorted({item.get("sector", "") for item in available if item.get("sector")})
+            url = getattr(entry, "link", "")
+            articles.append({
+                "id": url or f"portfolio-{title}",
+                "title": title,
+                "summary": f"持仓匹配：{'、'.join(match_names)}。{summary}",
+                "url": url,
+                "source": publisher or "Google News",
+                "platform": "Portfolio",
+                "lang": "zh" if re.search(r"[\u4e00-\u9fff]", title) else "en",
+                "priority": 4,
+                "portfolio_matches": match_names,
+                "portfolio_tickers": [item["ticker"] for item in available],
+                "portfolio_sector": "、".join(sectors),
+            })
+
+    print(f"  持仓雷达: {len(articles)} 条（覆盖 {len(per_name)} 只持仓）")
+    return articles
+
+
+def _fetch_portfolio_sector_news() -> list[dict]:
+    """Fetch upstream and peer signals for the portfolio's largest sector bets."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=2)
+    articles = []
+    for theme in PORTFOLIO_SECTOR_QUERIES:
+        url = "https://news.google.com/rss/search?" + urlencode(
+            {
+                "q": f'({theme["query"]}) when:2d',
+                "hl": "zh-CN", "gl": "CN", "ceid": "CN:zh-Hans",
+            }
+        )
+        try:
+            resp = requests.get(url, timeout=15, headers=_HEADERS, verify=False)
+            resp.raise_for_status()
+            feed = feedparser.parse(resp.content)
+        except Exception as exc:
+            print(f'  [WARN] 行业雷达 {theme["sector"]}: {exc}')
+            continue
+
+        kept = 0
+        for entry in feed.entries:
+            pub = _parse_dt(entry)
+            if pub and pub < cutoff:
+                continue
+            title = getattr(entry, "title", "").strip()
+            link = getattr(entry, "link", "")
+            if not title or not link:
+                continue
+            summary = _clean(
+                getattr(entry, "summary", "") or getattr(entry, "description", "")
+            )
+            source_obj = getattr(entry, "source", None)
+            publisher = ""
+            if source_obj:
+                publisher = getattr(source_obj, "title", "") or source_obj.get("title", "")
+            articles.append({
+                "id": link,
+                "title": title,
+                "summary": (
+                    f'行业关联：{theme["sector"]}；相关持仓：'
+                    f'{"、".join(theme["holdings"])}。{summary}'
+                ),
+                "url": link,
+                "source": publisher or "Google News",
+                "platform": "Sector",
+                "lang": "zh" if re.search(r"[\u4e00-\u9fff]", title) else "en",
+                "priority": 3,
+                "portfolio_matches": theme["holdings"],
+                "portfolio_sector": theme["sector"],
+            })
+            kept += 1
+            if kept >= 2:
+                break
+    print(f"  行业雷达: {len(articles)} 条")
+    return articles
+
+
 # ─── ARK ETF 每日持仓 CSV ──────────────────────────────────────────────────────
 
 def _fetch_ark_csv() -> list[dict]:
@@ -353,6 +515,10 @@ def _fetch_sec_13f() -> list[dict]:
 
 def fetch_all() -> list[dict]:
     articles = []
+    portfolio_items = _fetch_portfolio_news()
+    articles.extend(portfolio_items)
+    articles.extend(_fetch_portfolio_sector_news())
+
     for source in SOURCES:
         items = _fetch_rss(source)
         articles.extend(items)
