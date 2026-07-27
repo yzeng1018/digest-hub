@@ -1,1 +1,2 @@
 {"ts":"2026-07-26T22:42:33Z","project":"digest-hub/crypto","model":"qwen-max","provider":"qwen","scheduled_provider":"qwen","experiment_date":"2026-07-27","parse_rate":1,"score_spread":2.14,"translation_rate":0.9852941176470589,"perf_score":9.1}
+{"ts":"2026-07-27T22:46:16Z","project":"digest-hub/crypto","model":"deepseek-v4-flash","provider":"deepseek","scheduled_provider":"deepseek","experiment_date":"2026-07-28","parse_rate":1,"score_spread":2.34,"translation_rate":0.8145695364238411,"perf_score":8.78}
