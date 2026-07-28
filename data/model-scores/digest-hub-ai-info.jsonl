@@ -1,1 +1,2 @@
 {"ts":"2026-07-27T01:09:48Z","project":"digest-hub/ai-info","model":"deepseek-v4-flash","provider":"deepseek","scheduled_provider":"deepseek","experiment_date":"2026-07-27","parse_rate":1,"score_spread":2.71,"translation_rate":0.8378378378378378,"perf_score":9.22}
+{"ts":"2026-07-28T00:59:55Z","project":"digest-hub/ai-info","model":"qwen-max","provider":"qwen","scheduled_provider":"qwen","experiment_date":"2026-07-28","parse_rate":1,"score_spread":2.11,"translation_rate":0.7735849056603774,"perf_score":8.43}
