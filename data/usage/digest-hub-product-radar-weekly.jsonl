@@ -1,0 +1,1 @@
+{"ts": "2026-08-01T05:34:15Z", "provider": "qwen", "model": "qwen-max", "project": "digest-hub/product-radar-weekly", "input_tokens": 21040, "output_tokens": 12093, "cost_usd": 0.002293, "latency_ms": 0, "status": "success", "experiment": "deepseek-v4-flash_vs_qwen-max", "experiment_date": "2026-08-01", "scheduled_provider": "qwen"}
