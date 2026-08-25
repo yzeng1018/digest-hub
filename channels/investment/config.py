@@ -289,6 +289,11 @@ SCORE_IMPORTANT = 6
 
 DEDUP_THRESHOLD = 0.45
 
+# 已发送内容滚动记忆：旧故事直接过滤，同一公司近期反复出现则降低排序权重。
+HISTORY_RETENTION_DAYS = 30
+HISTORY_SIMILARITY_THRESHOLD = 0.50
+COMPANY_COOLDOWN_DAYS = 3
+
 # 持仓的上游/同业信号。行业新闻不享受持仓配额，仍需通过全局评分竞争入选。
 PORTFOLIO_SECTOR_QUERIES = [
     {"sector": "中国互联网平台", "query": "平台经济 OR 即时零售 OR 中国电商", "holdings": ["快手", "美团", "拼多多", "阿里巴巴", "滴滴出行"]},

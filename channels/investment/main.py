@@ -19,8 +19,10 @@ from mailer   import send_digest
 from config   import (
     MAX_ARTICLES, DEDUP_THRESHOLD, SCORING_SYSTEM_PROMPT, INSIGHT_MIN_RATIO,
     INSIGHT_MIN_SCORE, PORTFOLIO_MIN_COUNT, PORTFOLIO_MIN_SCORE, SOURCE_CAPS,
+    HISTORY_RETENTION_DAYS, HISTORY_SIMILARITY_THRESHOLD, COMPANY_COOLDOWN_DAYS,
 )
 from portfolio import load_portfolio_watchlist, portfolio_context
+from history import filter_seen_articles, load_history, save_sent_articles
 
 from common.dedup     import deduplicate
 from common.scorer    import score_articles, get_usage, get_metrics
@@ -54,7 +56,10 @@ def _apply_insight_quota(
     优先保证“有信息增量”的持仓新闻和深度内容配额；低分内容不为凑数入选。
     未用完的配额槽按全局分数回填。
     """
-    articles = sorted(articles, key=lambda a: -a.get("score", 0))
+    articles = sorted(
+        articles,
+        key=lambda a: -(a.get("score", 0) - a.get("history_penalty", 0)),
+    )
     min_insight = max(1, int(max_n * min_ratio))
     portfolio = [
         a for a in articles
@@ -106,12 +111,19 @@ def main():
     args = parser.parse_args()
 
     watchlist = load_portfolio_watchlist()
+    sent_history = load_history(HISTORY_RETENTION_DAYS)
     articles = fetch_all()
     if not articles:
         print("No articles fetched. Check your network / sources.")
         sys.exit(1)
 
     articles = deduplicate(articles, DEDUP_THRESHOLD)
+    articles = filter_seen_articles(
+        articles,
+        sent_history,
+        similarity_threshold=HISTORY_SIMILARITY_THRESHOLD,
+        company_cooldown_days=COMPANY_COOLDOWN_DAYS,
+    )
 
     if args.no_score:
         print("Skipping scoring (--no-score).")
@@ -157,6 +169,7 @@ def main():
 
     if not args.no_email:
         send_digest(articles, usage_info=usage_info, model_metrics=model_metrics)
+        save_sent_articles(articles, sent_history, HISTORY_RETENTION_DAYS)
 
     must_reads = sum(1 for a in articles if a["score"] >= 8)
     print(f"\n完成。共 {len(articles)} 条 · 必读 {must_reads} 条")
