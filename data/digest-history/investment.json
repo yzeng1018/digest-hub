@@ -4,7 +4,121 @@
       "date": "2026-08-25",
       "title": "直击美团业绩会：Q1亏损环比收窄 预期Q2单均利润将改善 “小美”与“元宝”合作将上线 - 财联社",
       "url": "",
-      "companies": ["美团"]
+      "companies": [
+        "美团"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "直击拼多多业绩会：Q2营收同比增8%至1124亿元，联席CEO：即时零售与电商协同相对有限，继续深耕供应链 - 东方财富",
+      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTFBTU3NUei05LTNtMHRJUVR4OUx4M2E4cEhaUVI3TTNzdWd6TnBfM3h4UndBYUdtVU1rcUxfWVJTNGNNZ1A0VTY0bkloV05ldWdHUmpfZmlyUFg1SkhnWG56VA?oc=5",
+      "companies": [
+        "拼多多"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "中国平安上半年归母营运利润增长8.3%，归母净利润大增36.1% - DoNews",
+      "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE9HcTU5U0RjdUpzQjJzRjJDc3ZNaFp0YnNibmRuMWMtVTUtTk14LTBhNUN6UVlXaTBfa3E5R0V1VWwxZGNqQnZsTkJIWUY1c3NZN2ZqbHl4c1gtUmh6Qnc?oc=5",
+      "companies": [
+        "中国平安"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "Xpeng shares sink as weak delivery forecast overshadows $6.3 billion robot unit valuation",
+      "url": "https://www.cnbc.com/2026/08/25/xpeng-shares-robot-valuation-china.html",
+      "companies": []
+    },
+    {
+      "date": "2026-08-25",
+      "title": "亏损收窄、打通“元宝”后 美团大涨9% - 财联社",
+      "url": "https://news.google.com/rss/articles/CBMiSEFVX3lxTE5HbjNJdEZKOTBuSWo3M0x1X3V1c0V1dFZreGZPOUNuTUI2TXFTc1RTQ2dseEVEQmJwOW1XSUN5eEFnYzZxa3Z1RQ?oc=5",
+      "companies": [
+        "美团"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "小米卢伟冰晒玄戒O100原型机：取消后置摄像头、加入风冷散热|xiaomi|玄戒芯片|超强散热|手机影像|大模型_手机新浪网 - 新浪财经",
+      "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxNbTdCRkpuY3hBYm5KLVBObkp3M3pTdGhSU0dWc19Ga0sxdk5tRS1hdW5RNTF6WVpjVHdNLS1zcm8wUmI4dTVxUm1ES2tOenBjd2Z2TWlqZ3pGaExFeDY4QWljMThiSmVTaHZBeDRteHJlenNjel9IOGRkN05odlVTWkdhS2ttTGQzcVRuNFprX3hEZlV0dzN2WTRKTjJoVVExQUM4WGg1bw?oc=5",
+      "companies": [
+        "小米集团"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "小米Xiaomi 18 Fold将首发搭载玄戒O3于9月上市 门店工作人员：是阔折叠 - 东方财富",
+      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE5zd2g0ajVZSldZSXBjS1lScGNsc09DTkNUUms1dVd0RTZzdXV1cjFGWVRuVjF5bGNJazkwWlJYd0U4TThUNnBKc2dkeE1lQ2o0eU9TazlGUWNoYXIwWWtpaw?oc=5",
+      "companies": [
+        "小米集团"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "美股异动丨多邻国盘前涨超1% Q2用户增长强劲 Wedbush上调目标价至150美元 - 搜狐网",
+      "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxNRE4xcENGVlNXWVpoMzlINzY4T0xKMWJYeTRkZkhQUFZXYVJKUk1IMFpZS3pHR1I4VmdXSlotYVdlLUhNcFBwaTRPUTU4RnhGazZaTlc1VFVtc09jLVAtSWRWcVNhNkp1UXZLTWhMVTB3U09pYWtYSkVtUllqdVZSbXRSVDRFNXR6RGFMdw?oc=5",
+      "companies": [
+        "多邻国"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "携程集团副总裁秦静：未来5年将给中国带来2亿外国游客 - 京报网",
+      "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE9FS2xJZ19FNHk3Vk5yaTRyRjBmc1plbS1Wa0FmZG8xSjZyVXVKc0tIUEpPdjloZGJDVVRyUHdZOVd6TGZONlNwUFNtRjhwaFBkTTVHcUZYdlZMZUl0RW9nMF9rLUxUZXdESzRmampsSTgwZw?oc=5",
+      "companies": [
+        "携程集团"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "Neil Movva - Making AI 10x Cheaper - [Invest Like the Best, EP.488]",
+      "url": "https://colossus.com/episode/from-transistor-to-token",
+      "companies": []
+    },
+    {
+      "date": "2026-08-25",
+      "title": "宁德时代的高利润该咋看？（小经说汽车） - 人民网",
+      "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE9rSWpzeDBVcnJTRi04Nk9qNjhWZzBUQkpCNzVHT3NUbTh2cU94Zm1sUzllVk8wQy03WjF0ZjYwVGtsWDlSNTRuQ2dmZHRlSUU3X0pjSHVfNUk4V0M4V1prSjVjUlFobUh0WEh1aU5n?oc=5",
+      "companies": [
+        "宁德时代"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "9.44亿美元新注资，日本晶圆代工的万亿级野心 - t.cj.sina.cn",
+      "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTFBVSm9TMkdoYzlnTlVNV1FhNVA1Q2tiNkJ6U29VRDE5Y1VwVlhvV0IzZHk2bDRDalQwX0RHMXRubFRRSlUtaEp4aDJ5aTVpTnkwRU9WbG9NSXZ1dGpGQ0pyM1VyUWtYM1QyMzJlajhoRzY?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-08-25",
+      "title": "Chinese tech giant Tencent sees spending surge, defends potential 'superior' AI returns",
+      "url": "https://www.cnbc.com/2026/08/12/china-tencent-earnings-q2-2026-gaming-ai-advertising.html",
+      "companies": []
+    },
+    {
+      "date": "2026-08-25",
+      "title": "拼多多二季度营收1124亿：当TEMU承压时，多多买菜能否成为新的基本盘？ - 新浪财经",
+      "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOeGNTLVl3dHRRSnd6NzR0bkk3R2Q4VE5sbGFvTm1vLVMtMUxudVhrM3VzWkVNRVZJYlA5NUtlN1hVWHY1Y3E2LWJnZDBUeU9QdU9iS0p0azFoc3cxNzFFT3pIcmd5bXpMSU5vSm1PTGN6emVzaTNCVnNYY3pFbDU3bzVudlV2V3U2NTNzSTRLMEY0OW5PUjZnWXZsMTdzdFZ0dThlRzNwSzZGenU2ekxNc3lhcmhaQ1lnTVRxUQ?oc=5",
+      "companies": [
+        "拼多多"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "DEMO | 前剪映负责人创业融资近亿，替代Figma，给AI Coding们补补审美 - 新浪财经",
+      "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxQUE5Qalp5UlJVczRfaVZYS1NobGFTUGtDbTBzY2ZVd0FRZWNVN3dhM2NlU2ZkLXR4Y0picGgyMENmWk1WdHpHeE05dlBCU0czdXhlYVpnWDNfSVlVU1IwY2dZOWtGcldMNjNUYmt2VlhGZGFzUWYwQ1U2V3p0NVVGWlpWY3lvVkhuVDdwc0dVZFlZV2Q1V2hyQmVnZjU1UUF1WlRyV05Iaw?oc=5",
+      "companies": [
+        "Figma"
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "title": "中信证券（600030.SH）新增一起对外投资，被投资公司为合肥蔚能创新电池科技有限公司_公司新闻 - 证券之星",
+      "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE4zSm1oMXZ0VXNraFF5dVExcFltUFpyajRnMjNwZmw5bmpoeWlQcmxWVWRyNEF0SHpzRTJINVIwQzBub19KRWtxQVBSUHF6M0Y4clF3M01iNWM4eDJuTW9Za2hMNC0?oc=5",
+      "companies": [
+        "中信证券"
+      ]
     }
   ]
 }
