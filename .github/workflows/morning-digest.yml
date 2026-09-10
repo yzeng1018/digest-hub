@@ -32,7 +32,7 @@ jobs:
           DEEPSEEK_API_KEY:   ${{ secrets.DEEPSEEK_API_KEY }}
           QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           CHANNEL_NAME:       digest-hub/ai-info
-        run: node channels/ai-info/main.js
+        run: node channels/ai-info/main.js --no-email
 
       - name: 提交 usage 日志
         if: always()
@@ -72,7 +72,7 @@ jobs:
           DEEPSEEK_API_KEY:   ${{ secrets.DEEPSEEK_API_KEY }}
           QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}
           CHANNEL_NAME:       digest-hub/investment
-        run: python channels/investment/main.py
+        run: python channels/investment/main.py --no-email
 
       - name: 提交 usage 日志
         if: always()
