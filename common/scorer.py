@@ -57,6 +57,7 @@ _active_provider: str | None = None
 
 _usage: dict = {
     "model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0,
+    "stages": {},
     "scheduled_provider": _SELECTED_PROVIDER, "experiment_date": _AB_DATE,
 }
 _metrics: dict = {"batches_total": 0, "batches_parsed": 0}
@@ -128,7 +129,31 @@ def _call_provider(config: dict, messages: list, **kwargs):
     )
 
 
-def _complete(messages: list, **kwargs):
+def _record_usage(response, provider: str, stage: str) -> None:
+    """Accumulate every AI call, including post-ranking enrichment calls."""
+    usage = getattr(response, "usage", None)
+    if not usage:
+        return
+    prompt = usage.prompt_tokens or 0
+    completion = usage.completion_tokens or 0
+    total = usage.total_tokens or prompt + completion
+    _usage["prompt_tokens"] += prompt
+    _usage["completion_tokens"] += completion
+    _usage["total_tokens"] += total
+    if not _usage["model"]:
+        _usage["model"] = (
+            getattr(response, "model", "") or _provider_config(provider)["model"]
+        )
+    stages = _usage.setdefault("stages", {})
+    bucket = stages.setdefault(
+        stage, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    )
+    bucket["prompt_tokens"] += prompt
+    bucket["completion_tokens"] += completion
+    bucket["total_tokens"] += total
+
+
+def _complete(messages: list, usage_stage: str = "other", **kwargs):
     global _active_provider
     fallback = "qwen" if _SELECTED_PROVIDER == "deepseek" else "deepseek"
     first_error: Exception | None = None
@@ -141,6 +166,7 @@ def _complete(messages: list, **kwargs):
             if provider != _SELECTED_PROVIDER:
                 print(f"  [A/B] {_SELECTED_PROVIDER} 不可用，已降级到 {provider}")
             _active_provider = provider
+            _record_usage(response, provider, usage_stage)
             return response, provider
         except Exception as exc:
             first_error = first_error or exc
@@ -148,8 +174,8 @@ def _complete(messages: list, **kwargs):
     raise first_error or RuntimeError("DeepSeek 与 Qwen 均不可用")
 
 
-def call_ai(messages: list, **kwargs):
-    response, _ = _complete(messages, **kwargs)
+def call_ai(messages: list, usage_stage: str = "other", **kwargs):
+    response, _ = _complete(messages, usage_stage=usage_stage, **kwargs)
     return response
 
 
@@ -164,6 +190,17 @@ USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容进行评估。
     "title_zh": "中文标题",
     "summary_zh": "中文摘要4-6句，充分展开背景、核心内容和价值，不要过于简短"
   }}
+]
+
+内容列表：
+{articles_json}
+"""
+
+COMPACT_USER_PROMPT_TEMPLATE = """请对以下 {count} 条内容做快速筛选。
+
+只判断投资信息增量，不做长摘要。严格返回 JSON 数组，不要 markdown：
+[
+  {{"id":"序号","score":1到10的整数,"reason_zh":"不超过16字的判断依据"}}
 ]
 
 内容列表：
@@ -207,10 +244,12 @@ def score_articles(
     system_prompt: str,
     batch_size: int = 10,
     summary_fn: Callable[[dict], str] | None = None,
+    compact: bool = False,
 ) -> list[dict]:
     global _usage, _metrics
     _usage = {
         "model": "", "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0,
+        "stages": {},
         "scheduled_provider": _SELECTED_PROVIDER, "experiment_date": _AB_DATE,
     }
     _metrics = {"batches_total": 0, "batches_parsed": 0}
@@ -229,25 +268,21 @@ def score_articles(
             }
             for i, art in enumerate(batch)
         ]
-        user_msg = USER_PROMPT_TEMPLATE.format(
+        prompt_template = COMPACT_USER_PROMPT_TEMPLATE if compact else USER_PROMPT_TEMPLATE
+        user_msg = prompt_template.format(
             count=len(batch), articles_json=json.dumps(items, ensure_ascii=False, indent=2)
         )
         _metrics["batches_total"] += 1
         try:
-            response, backend = _complete(
+            response, _ = _complete(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_msg},
                 ],
-                max_tokens=8192,
+                max_tokens=2048 if compact else 8192,
                 timeout=120,
+                usage_stage="rank" if compact else "score",
             )
-            if response.usage:
-                _usage["prompt_tokens"] += response.usage.prompt_tokens
-                _usage["completion_tokens"] += response.usage.completion_tokens
-                _usage["total_tokens"] += response.usage.total_tokens
-            if not _usage["model"]:
-                _usage["model"] = getattr(response, "model", "") or _provider_config(backend)["model"]
             results = _parse_response(response.choices[0].message.content or "")
             if results:
                 _metrics["batches_parsed"] += 1

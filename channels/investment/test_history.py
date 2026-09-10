@@ -8,32 +8,32 @@ from history import filter_seen_articles, load_history, save_sent_articles
 
 
 class InvestmentHistoryTests(unittest.TestCase):
-    def test_filters_same_story_by_normalized_url_and_similar_title(self):
+    def test_filters_tracking_url_and_penalizes_recent_company(self):
         history = [{
-            "date": "2026-08-24",
-            "title": "直击美团业绩会：Q1亏损环比收窄 - 财联社",
-            "url": "https://example.com/meituan?utm_source=rss",
-            "companies": ["美团"],
+            "date": "2026-08-23",
+            "title": "阿里巴巴增发股票",
+            "url": "https://example.com/story",
+            "companies": ["SoFi Technologies"],
         }]
         articles = [
             {
-                "title": "直击美团业绩会：Q1亏损环比收窄 - 另一媒体",
-                "url": "https://example.com/another-copy",
+                "title": "阿里巴巴增发股票",
+                "url": "https://example.com/story?utm_source=rss",
                 "platform": "Portfolio",
-                "portfolio_matches": ["美团"],
+                "portfolio_matches": ["阿里巴巴"],
             },
             {
-                "title": "美团发布新的即时零售产品",
+                "title": "SoFi发布新的季度经营数据",
                 "url": "https://example.com/new",
                 "platform": "Portfolio",
-                "portfolio_matches": ["美团"],
+                "portfolio_matches": ["SoFi Technologies"],
             },
         ]
         kept = filter_seen_articles(
             articles, history, similarity_threshold=0.5,
-            company_cooldown_days=3, today=date(2026, 8, 25),
+            company_cooldown_days=3, today=date(2026, 8, 24),
         )
-        self.assertEqual([item["title"] for item in kept], ["美团发布新的即时零售产品"])
+        self.assertEqual([item["title"] for item in kept], ["SoFi发布新的季度经营数据"])
         self.assertGreater(kept[0]["history_penalty"], 1)
 
     def test_save_and_reload_sent_history(self):
@@ -44,7 +44,7 @@ class InvestmentHistoryTests(unittest.TestCase):
                 article = {
                     "title": "英伟达发布新芯片",
                     "url": "https://example.com/nvda",
-                    "platform": "Portfolio",
+                    "platform": "Watchlist",
                     "portfolio_matches": ["英伟达"],
                 }
                 save_sent_articles([article], [], 30, today=date(2026, 8, 24))

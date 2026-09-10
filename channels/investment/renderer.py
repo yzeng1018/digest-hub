@@ -30,6 +30,12 @@ def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
     prompt = usage_info.get("prompt_tokens", 0)
     comp   = usage_info.get("completion_tokens", 0)
     total  = usage_info.get("total_tokens", 0)
+    stages = usage_info.get("stages", {})
+    rank_tokens = stages.get("rank", {}).get("total_tokens", 0)
+    enrich_tokens = stages.get("enrich", {}).get("total_tokens", 0)
+    stage_html = ""
+    if rank_tokens or enrich_tokens:
+        stage_html = f" &nbsp;·&nbsp; 初筛 {rank_tokens:,} / 深析 {enrich_tokens:,}"
 
     perf_html = ""
     if model_metrics and model_metrics.get("perf_score") is not None:
@@ -46,14 +52,15 @@ def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
     return (
         f'<div class="usage-bar">'
         f'🤖 {model} &nbsp;·&nbsp; ↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens'
+        f'{stage_html}'
         f'{perf_html}'
         f'</div>'
     )
 
 
 def _section(art: dict) -> tuple[str, str]:
-    if art.get("platform") == "Portfolio":
-        return "portfolio", "🎯 持仓雷达"
+    if art.get("platform") in {"Portfolio", "Watchlist"}:
+        return "portfolio", "🎯 持仓与观察"
     if art.get("platform") in {"Blog", "Memo", "Podcast"}:
         return "insight", "🧠 投资框架"
     return "market", "🌍 中外市场机会"
@@ -70,19 +77,25 @@ def _display_order(articles: list[dict]) -> list[dict]:
 
 
 def _ideas_panel(articles: list[dict]) -> str:
-    ideas = [a for a in articles if a.get("investment_angle_zh")][:3]
+    ideas = [a for a in articles if a.get("_is_content_idea")]
     if not ideas:
         return ""
     rows = ""
     for article in ideas:
-        label = "、".join(article.get("portfolio_matches", []))
-        label = label or article.get("portfolio_sector") or "市场线索"
+        label = article.get("idea_topic_zh") or "市场线索"
         signal = article.get("confirmation_signal_zh", "")
         signal_html = f"<small>验证：{escape(signal)}</small>" if signal else ""
+        hook = article.get("news_hook_zh", "")
+        title = article.get("title_zh") or article.get("title", "")
+        source = article.get("source", "")
+        url = article.get("url", "#")
         rows += (
             f'<div class="idea"><b>{escape(label)}</b>'
+            f'<div class="idea-hook">热点：{escape(hook)}</div>'
             f'<div>{escape(article["investment_angle_zh"])}</div>'
-            f"{signal_html}</div>"
+            f"{signal_html}"
+            f'<a class="idea-source" href="{escape(url, quote=True)}">来源：{escape(source)} · {escape(title)}</a>'
+            f"</div>"
         )
     return f'<div class="ideas"><h2>💡 今日投资线索</h2><p>以下是基于新闻的研究假设，不是买卖建议。</p>{rows}</div>'
 
@@ -172,6 +185,7 @@ body{{background:#0d1117;color:#e6edf3;font-family:-apple-system,'PingFang SC','
 .ideas h2{{font-size:16px;color:#f0c040;}}.ideas>p{{font-size:11px;color:#8b949e;margin-top:4px;}}
 .idea{{margin-top:12px;padding-top:12px;border-top:1px solid #302b16;font-size:13px;line-height:1.6;}}
 .idea b{{color:#f0c040;}}.idea small{{display:block;color:#56d364;margin-top:3px;}}
+.idea-hook{{color:#e6edf3;font-weight:600;margin:4px 0;}}.idea-source{{display:block;color:#58a6ff;font-size:11px;margin-top:5px;text-decoration:none;}}
 .section-title{{font-size:15px;font-weight:800;color:#e6edf3;margin:18px 2px 10px;padding-bottom:8px;border-bottom:1px solid #30363d;}}
 .card{{display:flex;gap:12px;padding:16px;border:1px solid #21262d;border-radius:8px;margin-bottom:12px;background:#161b22;}}
 .score{{flex-shrink:0;width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;}}

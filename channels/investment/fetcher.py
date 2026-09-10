@@ -70,6 +70,9 @@ def _is_recent(entry) -> bool:
 
 
 def _fetch_rss(source: dict) -> list[dict]:
+    if source.get("type") == "html_index":
+        return _fetch_html_index(source)
+
     articles = []
     is_insight = source.get("platform") in _INSIGHT_PLATFORMS
     cutoff = datetime.now(timezone.utc) - (
@@ -102,6 +105,79 @@ def _fetch_rss(source: dict) -> list[dict]:
             "platform": source.get("platform", "News"),
             "lang":     source["lang"],
             "priority": source.get("priority", 2),
+            "published_at": dt.isoformat() if dt else "",
+        })
+    return articles
+
+
+def _meta_content(page: str, prop: str) -> str:
+    escaped = re.escape(prop)
+    patterns = [
+        rf'<meta[^>]+(?:property|name)=["\']{escaped}["\'][^>]+content=["\']([^"\']*)["\']',
+        rf'<meta[^>]+content=["\']([^"\']*)["\'][^>]+(?:property|name)=["\']{escaped}["\']',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, page, re.I)
+        if match:
+            return html.unescape(match.group(1).strip())
+    return ""
+
+
+def _fetch_html_index(source: dict) -> list[dict]:
+    """Fetch public newsletter/archive pages that no longer expose RSS."""
+    cutoff = datetime.now(timezone.utc) - _INSIGHT_CUTOFF
+    try:
+        response = requests.get(source["url"], timeout=15, headers=_HEADERS, verify=False)
+        response.raise_for_status()
+    except Exception as exc:
+        print(f"  [WARN] {source['name']}: {exc}")
+        return []
+
+    pattern = re.compile(source["link_pattern"])
+    links = []
+    seen = set()
+    for raw_link in re.findall(r'href=["\']([^"\'#]+)["\']', response.text, re.I):
+        link = html.unescape(raw_link)
+        if not pattern.match(link) or link in seen:
+            continue
+        seen.add(link)
+        links.append(link)
+        if len(links) >= source.get("max_links", 12):
+            break
+
+    articles = []
+    for link in links:
+        try:
+            page_response = requests.get(link, timeout=15, headers=_HEADERS, verify=False)
+            page_response.raise_for_status()
+            page = page_response.text
+        except Exception:
+            continue
+
+        published = _meta_content(page, "article:published_time")
+        if not published:
+            time_match = re.search(r'<time[^>]+datetime=["\']([^"\']+)["\']', page, re.I)
+            published = time_match.group(1) if time_match else ""
+        try:
+            published_dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        if published_dt < cutoff:
+            continue
+
+        title = _meta_content(page, "og:title")
+        if not title:
+            continue
+        articles.append({
+            "id": link,
+            "title": title,
+            "summary": _clean(_meta_content(page, "og:description") or _meta_content(page, "description")),
+            "url": link,
+            "source": source["name"],
+            "platform": source.get("platform", "Newsletter"),
+            "lang": source["lang"],
+            "priority": source.get("priority", 2),
+            "published_at": published_dt.isoformat(),
         })
     return articles
 
@@ -169,6 +245,7 @@ def _fetch_twitter_handle(kol: dict, live: list[str], cutoff: datetime) -> list[
                 "platform": "X",
                 "lang":     "en",
                 "priority": 3,
+                "published_at": pub.isoformat() if pub else "",
             })
             count += 1
 
@@ -251,6 +328,7 @@ def _fetch_hn() -> list[dict]:
             "lang":      "en",
             "priority":  2,
             "_hn_score": item.get("score", 0),
+            "published_at": dt.isoformat(),
         })
         count += 1
         time.sleep(0.1)
@@ -260,9 +338,8 @@ def _fetch_hn() -> list[dict]:
 
 # ─── Portfolio news via Google News RSS ──────────────────────────────────────
 
-_PORTFOLIO_QUERY_SIZE = 4
-_PORTFOLIO_MAX_GROUPS = 5
-_PORTFOLIO_MAX_PER_NAME = 2
+_PORTFOLIO_QUERY_SIZE = 8
+_PORTFOLIO_MAX_PER_NAME = 1
 
 
 def _portfolio_query_url(items: list[dict]) -> str:
@@ -296,9 +373,9 @@ def _match_watchlist(text: str, watchlist: list[dict]) -> list[dict]:
 
 
 def _fetch_portfolio_news(watchlist: list[dict] | None = None) -> list[dict]:
-    """Fetch recent news that explicitly matches companies in the live portfolio."""
+    """Fetch recent news that explicitly matches holdings or watched companies."""
     watchlist = watchlist or load_portfolio_watchlist()
-    selected = watchlist[: _PORTFOLIO_QUERY_SIZE * _PORTFOLIO_MAX_GROUPS]
+    selected = watchlist
     cutoff = datetime.now(timezone.utc) - timedelta(days=2)
     per_name: dict[str, int] = {}
     articles = []
@@ -340,23 +417,28 @@ def _fetch_portfolio_news(watchlist: list[dict] | None = None) -> list[dict]:
             if source_obj:
                 publisher = getattr(source_obj, "title", "") or source_obj.get("title", "")
             match_names = [item["name"] for item in available]
+            is_holding = any(item.get("is_holding") for item in available)
             sectors = sorted({item.get("sector", "") for item in available if item.get("sector")})
             url = getattr(entry, "link", "")
             articles.append({
                 "id": url or f"portfolio-{title}",
                 "title": title,
-                "summary": f"持仓匹配：{'、'.join(match_names)}。{summary}",
+                "summary": f"关注名单匹配：{'、'.join(match_names)}。{summary}",
                 "url": url,
                 "source": publisher or "Google News",
-                "platform": "Portfolio",
+                "platform": "Portfolio" if is_holding else "Watchlist",
                 "lang": "zh" if re.search(r"[\u4e00-\u9fff]", title) else "en",
-                "priority": 4,
+                "priority": 4 if is_holding else 3,
                 "portfolio_matches": match_names,
                 "portfolio_tickers": [item["ticker"] for item in available],
                 "portfolio_sector": "、".join(sectors),
+                "published_at": pub.isoformat() if pub else "",
             })
 
-    print(f"  持仓雷达: {len(articles)} 条（覆盖 {len(per_name)} 只持仓）")
+    print(
+        f"  持仓与观察雷达: {len(articles)} 条"
+        f"（覆盖 {len(per_name)}/{len(selected)} 家公司）"
+    )
     return articles
 
 
@@ -399,7 +481,7 @@ def _fetch_portfolio_sector_news() -> list[dict]:
                 "id": link,
                 "title": title,
                 "summary": (
-                    f'行业关联：{theme["sector"]}；相关持仓：'
+                    f'行业关联：{theme["sector"]}；相关公司：'
                     f'{"、".join(theme["holdings"])}。{summary}'
                 ),
                 "url": link,
@@ -409,6 +491,7 @@ def _fetch_portfolio_sector_news() -> list[dict]:
                 "priority": 3,
                 "portfolio_matches": theme["holdings"],
                 "portfolio_sector": theme["sector"],
+                "published_at": pub.isoformat() if pub else "",
             })
             kept += 1
             if kept >= 2:
@@ -507,6 +590,7 @@ def _fetch_sec_13f() -> list[dict]:
                 "platform": "News",
                 "lang":     "en",
                 "priority": 3,
+                "published_at": pub.isoformat() if pub else "",
             })
 
     print(f"  SEC EDGAR 13F: {len(articles)} 条新申报")

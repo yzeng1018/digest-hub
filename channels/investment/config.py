@@ -62,13 +62,53 @@ SOURCES = [
         "lang": "en",
         "priority": 2,
     },
+    {
+        "name": "Wall Street Breakfast",
+        "url": "https://seekingalpha.com/tag/wall-st-breakfast.xml",
+        "lang": "en",
+        "platform": "Newsletter",
+        "priority": 3,
+    },
+    {
+        "name": "Seeking Alpha Stock Ideas",
+        "url": "https://seekingalpha.com/tag/investing-ideas.xml",
+        "lang": "en",
+        "platform": "Memo",
+        "priority": 3,
+    },
+    # 口罩哥式选题常从产业深度研究和公司一手材料起题。这里直接监控
+    # 原始来源，不转载或照搬创作者结论。
+    {
+        "name": "SemiAnalysis",
+        "url": "https://semianalysis.com/feed/",
+        "lang": "en",
+        "platform": "Research",
+        "priority": 4,
+    },
+    {
+        "name": "SK hynix Newsroom",
+        "url": "https://news.skhynix.com/en/feed/",
+        "lang": "en",
+        "platform": "Primary",
+        "priority": 4,
+    },
+    {
+        "name": "Samsung Semiconductor Newsroom",
+        "url": "https://news.samsungsemiconductor.com/global/feed/",
+        "lang": "en",
+        "platform": "Primary",
+        "priority": 4,
+    },
     # ── VC Firm Blogs ─────────────────────────────────────────────────────────
     {
         "name": "a16z",
-        "url": "https://a16z.com/feed/",
+        "url": "https://a16z.com/news-content/",
         "lang": "en",
         "platform": "Blog",
         "priority": 3,
+        "type": "html_index",
+        "link_pattern": r"^https://a16z\.com/(?!news-content/?$|wp-|\?|$).+",
+        "max_links": 20,
     },
     {
         "name": "Sequoia",
@@ -276,13 +316,23 @@ INSIGHT_WINDOW_DAYS = 14
 
 # ── 上限与评分参数 ────────────────────────────────────────────────────────────
 MAX_ARTICLES = 15
+PRE_SCORE_MAX_ARTICLES = 45  # 先用本地规则收窄候选，再调用付费模型
+PRE_SCORE_SOURCE_CAPS = {"36氪": 8, "Seeking Alpha Stock Ideas": 8}
+RANK_BATCH_SIZE = 15       # 紧凑初筛可用较大批次，减少重复 system prompt
 INSIGHT_MIN_RATIO = 0.20   # Blog/Memo/Podcast 最少占总数的 20%
 INSIGHT_MIN_SCORE = 7      # 不为凑“深度内容”配额而塞入泛创业鸡汤
 PORTFOLIO_MIN_COUNT = 6    # 有足够候选时，至少保留 6 条持仓直接相关新闻
 PORTFOLIO_MIN_SCORE = 6    # 纯股价播报/产品软文不占持仓雷达配额
-SOURCE_CAPS = {"36氪": 2}  # 每个来源的最大文章数（按分数保留最高的）
+WATCHLIST_MIN_COUNT = 4    # 观察名单也有独立版位，不被持仓与通用新闻挤掉
+WATCHLIST_MIN_SCORE = 7    # 只保底有明确投资信息增量的观察公司新闻
+SOURCE_CAPS = {"36氪": 2, "Seeking Alpha Stock Ideas": 2}  # 每个来源的最大文章数（按分数保留最高的）
 ENRICH_MIN_SCORE = 7
 ENRICH_MAX_COUNT = 10
+ENRICH_BATCH_SIZE = 5
+CONTENT_IDEA_COUNT = 3
+CONTENT_IDEA_COOLDOWN_DAYS = 14
+CONTENT_IDEA_MAX_AGE_HOURS = 72
+CONTENT_IDEA_HISTORY_PATH = "data/digest-history/investment-ideas.jsonl"
 
 SCORE_MUST_READ = 8
 SCORE_IMPORTANT = 6
@@ -301,6 +351,9 @@ PORTFOLIO_SECTOR_QUERIES = [
     {"sector": "中国半导体", "query": "晶圆代工 OR 中国半导体设备", "holdings": ["中芯国际"]},
     {"sector": "在线旅游", "query": "出境游 OR 在线旅游市场", "holdings": ["携程集团"]},
     {"sector": "AI应用与金融科技", "query": "AI教育 OR 设计软件 OR 金融科技", "holdings": ["多邻国", "Figma", "SoFi Technologies", "Block"]},
+    {"sector": "AI大模型与机器人", "query": "MiniMax OR 智谱AI OR Z.ai OR 人形机器人", "holdings": ["MiniMax", "智谱AI", "Figure AI", "优必选", "微创机器人"]},
+    {"sector": "全球AI芯片产业链", "query": "AI芯片 OR HBM OR 先进封装 OR 晶圆代工", "holdings": ["台积电", "英伟达", "三星电子", "SK海力士", "中芯国际"]},
+    {"sector": "存储芯片与设备", "query": "DRAM OR NAND OR HBM OR 存储芯片 OR 半导体设备", "holdings": ["美光科技", "SK海力士", "三星电子", "南亚科", "华邦电", "应用材料", "泛林集团"]},
 ]
 
 # ── Qwen 评分视角（投资人视角，聚焦融资/并购/IPO）────────────────────────────
@@ -308,7 +361,8 @@ SCORING_SYSTEM_PROMPT = """你是一位服务个人投资组合的全球公开�
 你的任务是评估每条内容对「发现投资线索、验证持仓逻辑、识别组合风险」的价值，而不是按媒体热度评分。
 
 组合相关规则：
-- 标记为 Portfolio/持仓雷达的内容，若会改变收入、利润率、竞争格局、监管风险或估值锚，优先级应明显提高。
+- 标记为 Portfolio/实际持仓的内容，若会改变收入、利润率、竞争格局、监管风险或估值锚，优先级应明显提高。
+- 标记为 Watchlist/观察名单的内容也要评分，但不占用实际持仓的保底配额。
 - 仅仅提到公司名、股价涨跌或重复旧闻，不应因是持仓而获得高分。
 - 区分事实和推论；没有增量信息的评论、PR稿和标题党降分。
 
@@ -326,18 +380,25 @@ SCORING_SYSTEM_PROMPT = """你是一位服务个人投资组合的全球公开�
 """
 
 # ── Enrichment Prompt ─────────────────────────────────────────────────────────
-ENRICH_SYSTEM_PROMPT = """你是一位专注早期投资的风险投资人。
-给定一篇投资/融资相关文章的正文（或搜索摘要），请提取以下4个字段：
+ENRICH_SYSTEM_PROMPT = """你是一位服务个人投资组合的公开市场研究员。
+给定多篇新闻及其正文或搜索背景，为每篇生成适合投资晨报的中文信息：
 
-1. reason_zh：一句话说清新闻改变了什么（30字以内）
-2. background_zh：1-2句背景介绍，帮助读者理解该公司或赛道背景
-3. key_players_zh：涉及的关键投资方/被投公司/创始人，逗号分隔（如无则留空）
-4. data_point_zh：最有价值的一个数字（收入/利润率/销量/估值/增速/市场规模，如无则留空）
-5. portfolio_relevance_zh：若与给定持仓有关，说明影响哪只持仓及方向；无关则留空
-6. investment_angle_zh：用“事实→传导链→潜在受益/受损者”写一条投资灵感，必须标明其中的推论（60字以内）
-7. confirmation_signal_zh：未来应跟踪的一个可观测验证信号（30字以内）
-8. risk_zh：这条投资推论最可能错在哪里（30字以内）
+1. title_zh：准确中文标题；中文原文可精简但不得改写事实
+2. summary_zh：2-3句中文摘要，只保留事实、关键数字和增量信息
+3. reason_zh：一句话说清新闻改变了什么（30字以内）
+4. background_zh：1句必要背景；没有则留空
+5. key_players_zh：关键公司/机构/人物，逗号分隔
+6. data_point_zh：最有价值的一个数字；没有则留空
+7. portfolio_relevance_zh：说明影响哪只相关持仓或观察公司及方向；无关则留空
+8. investment_angle_zh：用“事实→传导链→潜在受益/受损者”写投资假设，明确标记推论（60字以内）
+9. confirmation_signal_zh：未来应跟踪的一个可观测验证信号（30字以内）
+10. risk_zh：这条推论最可能错在哪里（30字以内）
+11. idea_topic_zh：内容选题的标准化主题名（12字以内）。同一赛道使用稳定名称，例如 DRAM/NAND/HBM/内存统一写“存储芯片”
+12. news_hook_zh：只写这条新闻在最近72小时新发生的事实或数字（35字以内）；旧文章、泛观点或无法确认时必须留空
 
-严格以 JSON 格式返回，不要任何其他文字：
-{"reason_zh":"...","background_zh":"...","key_players_zh":"...","data_point_zh":"...","portfolio_relevance_zh":"...","investment_angle_zh":"...","confirmation_signal_zh":"...","risk_zh":"..."}
+内容灵感写法：学习优秀财经短内容“最新事实/数字 → 反常识变化 → 产业链传导”的结构，但不得复制任何创作者观点。
+只有 news_hook_zh 非空的内容才有资格成为今日内容灵感；优先公司公告、财报/电话会、监管/海关数据和可靠产业研究。
+
+严格返回 JSON 数组，每个输入 id 对应一个结果，不要任何其他文字：
+[{"id":"0","title_zh":"...","summary_zh":"...","reason_zh":"...","background_zh":"...","key_players_zh":"...","data_point_zh":"...","portfolio_relevance_zh":"...","investment_angle_zh":"...","confirmation_signal_zh":"...","risk_zh":"...","idea_topic_zh":"...","news_hook_zh":"..."}]
 """

@@ -22,8 +22,30 @@ size. GitHub Actions uses `channels/investment/portfolio_watchlist.json`, a priv
 safe snapshot containing company names and tickers only. Set `PORTFOLIO_DATA_PATH`
 to use a different local portfolio file.
 
-Portfolio and long-form quota slots have minimum quality scores; low-value price
-recaps and generic startup content are not included just to fill a section.
+The tracked watchlist also covers selected US, China/Hong Kong, Taiwan, and Korean
+companies, including the global AI-chip and memory supply chains. Live holdings
+receive a higher ranking priority; watchlist companies compete on news quality.
+
+Portfolio, watchlist, and long-form quota slots have minimum quality scores;
+low-value price recaps and generic startup content are not included just to fill
+a section.
+
+The investment digest also keeps a rolling 30-day record of sent stories. Exact
+URLs and near-identical titles are suppressed across daily runs, while companies
+featured during the previous three days receive a temporary ranking penalty. A
+new high-scoring development can still outrank that penalty, so the rotation does
+not hide material news.
+
+The separate “content ideas” panel is driven only by a concrete news hook from the
+latest 72 hours. It stores normalized topic history for 14 days, so aliases such as
+DRAM, NAND, HBM, memory, and storage share one cooldown instead of resurfacing as
+nominally different ideas. Each idea links the triggering source alongside the
+investment hypothesis.
+
+To control model spend, the pipeline filters obvious noise locally, ranks at most
+45 candidates with compact JSON, and generates full analysis only for the top 10
+in batches of five. Usage reporting includes both `rank` and `enrich` stages.
+These are synchronous request batches, not Alibaba Cloud's asynchronous Batch API.
 
 ## Required Secrets
 

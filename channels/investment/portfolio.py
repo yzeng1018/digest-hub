@@ -21,7 +21,10 @@ def _read_json(path: Path):
 
 
 def _fallback_watchlist() -> list[dict]:
-    return _read_json(_FALLBACK_PATH)
+    return [
+        dict(item, is_holding=item.get("list_type") == "holding")
+        for item in _read_json(_FALLBACK_PATH)
+    ]
 
 
 def load_portfolio_watchlist() -> list[dict]:
@@ -54,6 +57,8 @@ def load_portfolio_watchlist() -> list[dict]:
                 "aliases": base.get("aliases") or [holding.get("name") or ticker],
                 "exclude_phrases": base.get("exclude_phrases") or [],
                 "sector": base.get("sector") or "其他股票",
+                "list_type": "holding",
+                "is_holding": True,
             },
         )
         quantity = float(holding.get("quantity") or 0)
@@ -80,6 +85,7 @@ def load_portfolio_watchlist() -> list[dict]:
 
 def portfolio_context(watchlist: list[dict], limit: int = 18) -> str:
     return "、".join(
-        f'{item["name"]}({item["ticker"]}，{item.get("sector", "")})'
+        f'{item["name"]}({item["ticker"]}，{item.get("sector", "")}，'
+        f'{"持仓" if item.get("is_holding") else "观察"})'
         for item in watchlist[:limit]
     )

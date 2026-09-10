@@ -10,8 +10,8 @@ from common.mailer import send_html
 
 
 def _section(art: dict) -> tuple[str, str]:
-    if art.get("platform") == "Portfolio":
-        return "portfolio", "🎯 持仓雷达"
+    if art.get("platform") in {"Portfolio", "Watchlist"}:
+        return "portfolio", "🎯 持仓与观察"
     if art.get("platform") in {"Blog", "Memo", "Podcast"}:
         return "insight", "🧠 投资框架"
     return "market", "🌍 中外市场机会"
@@ -23,20 +23,25 @@ def _display_order(articles: list[dict]) -> list[dict]:
 
 
 def _ideas_email(articles: list[dict]) -> str:
-    ideas = [a for a in articles if a.get("investment_angle_zh")][:3]
+    ideas = [a for a in articles if a.get("_is_content_idea")]
     if not ideas:
         return ""
     rows = ""
     for article in ideas:
-        label = "、".join(article.get("portfolio_matches", []))
-        label = label or article.get("portfolio_sector") or "市场线索"
+        label = article.get("idea_topic_zh") or "市场线索"
         signal = article.get("confirmation_signal_zh", "")
+        hook = article.get("news_hook_zh", "")
+        title = article.get("title_zh") or article.get("title", "")
+        source = article.get("source", "")
+        url = article.get("url", "#")
         rows += (
             '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f3dfb3;'
             'font-size:13px;line-height:1.6;">'
             f'<b style="color:#9c5b00;">{escape(label)}</b>'
+            f'<div style="font-weight:600;color:#343a40;">热点：{escape(hook)}</div>'
             f'<div>{escape(article["investment_angle_zh"])}</div>'
             + (f'<div style="color:#2b8a3e;font-size:12px;">验证：{escape(signal)}</div>' if signal else "")
+            + f'<a href="{escape(url, quote=True)}" style="display:block;color:#1c7ed6;font-size:11px;margin-top:4px;">来源：{escape(source)} · {escape(title)}</a>'
             + '</div>'
         )
     return (
@@ -77,6 +82,12 @@ def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
     comp   = usage_info.get("completion_tokens", 0)
     total  = usage_info.get("total_tokens", 0)
     token_str = f"↑ {prompt:,} &nbsp;↓ {comp:,} &nbsp;共 {total:,} tokens" if total else "token 数据不可用"
+    stages = usage_info.get("stages", {})
+    rank_tokens = stages.get("rank", {}).get("total_tokens", 0)
+    enrich_tokens = stages.get("enrich", {}).get("total_tokens", 0)
+    stage_html = ""
+    if rank_tokens or enrich_tokens:
+        stage_html = f"&nbsp;·&nbsp; 初筛 {rank_tokens:,} / 深析 {enrich_tokens:,}"
 
     perf_html = ""
     if model_metrics and model_metrics.get("perf_score") is not None:
@@ -96,6 +107,7 @@ def _usage_bar(usage_info: dict, model_metrics: dict | None = None) -> str:
         f'border-radius:8px;font-size:11px;color:rgba(255,255,255,0.85);display:inline-block;">'
         f'🤖 {model} &nbsp;·&nbsp; '
         f'{token_str}'
+        f'{stage_html}'
         f'{perf_html}'
         f'</div>'
     )

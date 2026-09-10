@@ -89,7 +89,13 @@
     { "name": "OpenAI Research Blog",                  "url": "https://openai.com/news/rss.xml",                 "lang": "en" },
     { "name": "Gradient Descent · W&B",                "url": "https://wandb.ai/fully-connected/feed.xml",       "lang": "en" },
     { "name": "少数派 · AI 频道",                       "url": "https://sspai.com/feed",                          "lang": "zh" },
-    { "name": "ByteByteGo Newsletter",                 "url": "https://blog.bytebytego.com/feed",                "lang": "en" }
+    { "name": "ByteByteGo Newsletter",                 "url": "https://blog.bytebytego.com/feed",                "lang": "en" },
+    { "name": "VB Daily · VentureBeat",                "url": "https://venturebeat.com/feed",                    "lang": "en" },
+    { "name": "Superhuman AI",                         "url": "https://www.superhuman.ai/",                      "lang": "en", "type": "html-index", "linkPrefix": "https://www.superhuman.ai/p/", "maxLinks": 8 },
+    { "name": "AI Weekly",                             "url": "https://aiweekly.co/feed",                        "lang": "en" },
+    { "name": "Johnathan Bi",                          "url": "https://www.johnathanbi.com/feed",                "lang": "en" },
+    { "name": "The Neuron",                            "url": "https://www.theneuron.ai/newsletter/feed/",        "lang": "en", "transport": "fetch-with-curl-fallback" },
+    { "name": "Framer Updates",                        "url": "https://www.framer.com/updates",                  "lang": "en", "type": "html-index", "linkPrefix": "https://www.framer.com/updates/", "maxLinks": 8 }
   ],
   "podcasts": [
     { "name": "Latent Space",         "type": "channel",  "id": "UCxBcwypKK-W3GHd_RZ9FZrQ" },

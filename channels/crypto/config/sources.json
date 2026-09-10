@@ -36,6 +36,7 @@
     { "name": "Punk6529",             "handle": "punk6529",        "lang": "en" },
     { "name": "lookonchain",          "handle": "lookonchain",     "lang": "en" },
     { "name": "Coinbase",             "handle": "coinbase",        "lang": "en" },
+    { "name": "CoinGecko",            "handle": "coingecko",       "lang": "en" },
     { "name": "a16z crypto",          "handle": "a16zcrypto",      "lang": "en" },
     { "name": "Multicoin Capital",    "handle": "MulticoinCap",    "lang": "en" },
     { "name": "Bankless",             "handle": "banklesshq",      "lang": "en" },

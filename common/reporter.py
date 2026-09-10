@@ -32,26 +32,48 @@ _GLM_COST_TABLE: dict[str, tuple[float, float]] = {
 GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://localhost:8000")
 GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "")
 
-# qwen-max 单价（USD / 1M tokens），与 token-management/config/providers.yaml 保持一致
+# 非阿里云模型单价（USD / 1M tokens）。
 _COST_TABLE: dict[str, tuple[float, float]] = {
     "qwen/qwen3.6-27b": (0.0, 0.0),  # Groq 免费层
     "deepseek-v4-flash": (0.14, 0.28),
-    "qwen-max":   (0.04,  0.12),
+    # Legacy estimates retained for channels that explicitly select these models.
     "qwen-plus":  (0.004, 0.012),
     "qwen-turbo": (0.002, 0.006),
     "qwen-long":  (0.0005, 0.002),
 }
+
+# 阿里云百炼中国内地价格（CNY / 1M tokens，2026-07 核对）。
+# Batch 价格为实时调用的 50%；当前每日任务仍是实时调用。
+_QWEN_COST_CNY: dict[str, tuple[float, float]] = {
+    "qwen-max": (2.4, 9.6),
+}
+CNY_PER_USD = float(os.environ.get("CNY_PER_USD", "7.2"))
 
 
 _ALL_COST = {**_COST_TABLE, **_GLM_COST_TABLE}
 
 
 def _calc_cost(model: str, input_tokens: int, output_tokens: int) -> float:
+    qwen_base = next((k for k in _QWEN_COST_CNY if model.startswith(k)), None)
+    if qwen_base:
+        rates = _QWEN_COST_CNY[qwen_base]
+        cost_cny = ((input_tokens / 1_000_000) * rates[0]
+                    + (output_tokens / 1_000_000) * rates[1])
+        return cost_cny / CNY_PER_USD
     model_base = next((k for k in _ALL_COST if model.startswith(k)), None)
     rates = _ALL_COST.get(model_base or model)
     if not rates:
         return 0.0
     return (input_tokens / 1_000_000) * rates[0] + (output_tokens / 1_000_000) * rates[1]
+
+
+def _calc_cost_cny(model: str, input_tokens: int, output_tokens: int) -> float | None:
+    model_base = next((k for k in _QWEN_COST_CNY if model.startswith(k)), None)
+    if not model_base:
+        return None
+    rates = _QWEN_COST_CNY[model_base]
+    return ((input_tokens / 1_000_000) * rates[0]
+            + (output_tokens / 1_000_000) * rates[1])
 
 
 def _infer_provider(model: str) -> str:
@@ -156,6 +178,7 @@ def report_to_gateway(usage_info: dict, project: str) -> None:
     in_t     = usage_info.get("prompt_tokens", 0)
     out_t    = usage_info.get("completion_tokens", 0)
     cost     = _calc_cost(model, in_t, out_t)
+    cost_cny = _calc_cost_cny(model, in_t, out_t)
     provider = _infer_provider(model)
 
     payload = {
@@ -178,6 +201,9 @@ def report_to_gateway(usage_info: dict, project: str) -> None:
         "input_tokens":  in_t,
         "output_tokens": out_t,
         "cost_usd":      round(cost, 6),
+        "cost_cny":      round(cost_cny, 6) if cost_cny is not None else None,
+        "billing_mode":  "realtime",
+        "stages":        usage_info.get("stages", {}),
         "latency_ms":    0,
         "status":        "success",
         "experiment":    "deepseek-v4-flash_vs_qwen-max",

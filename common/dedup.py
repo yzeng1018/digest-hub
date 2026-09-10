@@ -8,10 +8,18 @@ import re
 
 
 def _tokens(text: str) -> set[str]:
-    words = re.findall(r"[\u4e00-\u9fff]|[a-zA-Z0-9]+", text.lower())
+    normalized = text.lower()
+    words = re.findall(r"[a-z0-9]+", normalized)
+    cjk_runs = re.findall(r"[\u4e00-\u9fff]+", normalized)
+    cjk_bigrams = {
+        run[index:index + 2]
+        for run in cjk_runs
+        for index in range(max(1, len(run) - 1))
+        if run[index:index + 2]
+    }
     stops = {"a", "an", "the", "in", "of", "to", "and", "for", "is", "on",
              "at", "by", "with", "that", "this", "are", "was", "it", "its"}
-    return {w for w in words if w not in stops and len(w) > 1}
+    return {w for w in words if w not in stops and len(w) > 1} | cjk_bigrams
 
 
 def _similarity(a: str, b: str) -> float:

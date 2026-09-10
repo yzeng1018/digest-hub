@@ -62,6 +62,8 @@ def _title_similarity(left: str, right: str) -> float:
     a, b = _title_tokens(left), _title_tokens(right)
     if not a or not b:
         return 0.0
+    # Dice similarity tolerates a publisher appending context to the same headline
+    # better than Jaccard, without treating a shared company name as the same event.
     return 2 * len(a & b) / (len(a) + len(b))
 
 
@@ -117,6 +119,7 @@ def filter_seen_articles(
         if ages:
             age = min(ages)
             if age < company_cooldown_days:
+                # This only affects ranking. A genuinely material new story can still win.
                 article["history_penalty"] = round(
                     2.0 * (company_cooldown_days - age) / company_cooldown_days, 2
                 )
@@ -149,8 +152,10 @@ def save_sent_articles(
         item for item in history
         if (_parse_day(item.get("date", "")) or date.min) >= cutoff
     ]
+    combined = retained + new_items
+    # Avoid growing history when the same date is rerun manually.
     unique: dict[tuple[str, str], dict] = {}
-    for item in retained + new_items:
+    for item in combined:
         unique[(item.get("date", ""), item.get("url") or item.get("title", ""))] = item
     path = _history_path()
     path.parent.mkdir(parents=True, exist_ok=True)
