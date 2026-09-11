@@ -1,7 +1,9 @@
 feedparser==6.0.11
 requests==2.32.3
 python-dotenv==1.0.1
-openai>=1.0.0
+# The openai SDK is intentionally not used. Importing its generated type
+# modules takes minutes in this environment, so common/scorer.py talks to the
+# OpenAI-compatible endpoints over plain requests instead.
 ddgs>=9.0.0
 beautifulsoup4==4.12.3
 httpx>=0.27.0

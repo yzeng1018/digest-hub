@@ -6,6 +6,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -68,7 +69,8 @@ def main():
 
     output_dir  = Path(__file__).parent / "output"
     output_dir.mkdir(exist_ok=True)
-    date_str    = datetime.now().strftime("%Y-%m-%d")
+    # Pin to Beijing time so the digest is never labelled with the UTC day.
+    date_str    = datetime.now(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d")
     output_path = args.output or str(output_dir / f"{date_str}.html")
     render(articles, output_path, usage_info=usage_info, model_metrics=model_metrics)
 

@@ -71,7 +71,9 @@ async function main() {
     articles.forEach(a => { a.background_zh = ''; });
   }
 
-  const dateStr = new Date().toISOString().slice(0, 10);
+  // Pin to Beijing time. toISOString() is UTC, which would label a 07:30
+  // Beijing run with the previous day.
+  const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
   const outputDir = join(__dirname, 'output');
   await mkdir(outputDir, { recursive: true });
 

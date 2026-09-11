@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from openai import OpenAI
+import requests
 
 DEEPSEEK_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")
@@ -118,15 +118,77 @@ def _provider_config(provider: str) -> dict:
     }
 
 
+class _Usage:
+    """Minimal stand-in for the SDK usage object."""
+
+    __slots__ = ("prompt_tokens", "completion_tokens", "total_tokens")
+
+    def __init__(self, data: dict):
+        self.prompt_tokens = data.get("prompt_tokens") or 0
+        self.completion_tokens = data.get("completion_tokens") or 0
+        self.total_tokens = data.get("total_tokens") or (
+            self.prompt_tokens + self.completion_tokens
+        )
+
+
+class _Message:
+    __slots__ = ("content",)
+
+    def __init__(self, content: str):
+        self.content = content
+
+
+class _Choice:
+    __slots__ = ("message",)
+
+    def __init__(self, message: _Message):
+        self.message = message
+
+
+class _Response:
+    """Minimal stand-in exposing only the fields this project reads."""
+
+    __slots__ = ("model", "choices", "usage")
+
+    def __init__(self, data: dict):
+        self.model = data.get("model", "")
+        first = (data.get("choices") or [{}])[0]
+        content = (first.get("message") or {}).get("content") or ""
+        self.choices = [_Choice(_Message(content))]
+        usage = data.get("usage")
+        self.usage = _Usage(usage) if usage else None
+
+
 def _call_provider(config: dict, messages: list, **kwargs):
+    """POST directly to the OpenAI-compatible chat completions endpoint.
+
+    The official SDK generates thousands of Literal types and takes minutes to
+    import on this machine, so we skip it and talk HTTP here. DeepSeek and
+    Qwen (DashScope compatible-mode) both speak the same wire format.
+    """
     if not config["api_key"]:
         raise RuntimeError(f"未配置 {config['provider']} API key")
-    client = OpenAI(api_key=config["api_key"], base_url=config["base_url"])
+    extra_body = kwargs.pop("extra_body", None) or {}
+    timeout = kwargs.pop("timeout", 120)
+    payload = {"model": config["model"], "messages": messages}
+    payload.update(extra_body)
+    payload.update(kwargs)
     if config["provider"] == "deepseek":
-        kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
-    return client.chat.completions.create(
-        model=config["model"], messages=messages, **kwargs
+        payload["thinking"] = {"type": "disabled"}
+    response = requests.post(
+        f"{config['base_url'].rstrip('/')}/chat/completions",
+        headers={
+            "Authorization": f"Bearer {config['api_key']}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=timeout,
     )
+    if response.status_code >= 400:
+        raise RuntimeError(
+            f"{config['provider']} HTTP {response.status_code}: {response.text[:300]}"
+        )
+    return _Response(response.json())
 
 
 def _record_usage(response, provider: str, stage: str) -> None:
