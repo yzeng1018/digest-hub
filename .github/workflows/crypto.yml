@@ -26,7 +26,7 @@ jobs:
 
       - name: 运行加密情报 digest
         env:
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          SMTP_PASSWORD:     ${{ secrets.SMTP_PASSWORD }}
           DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
           DEEPSEEK_API_KEY:   ${{ secrets.DEEPSEEK_API_KEY }}
           QWEN_API_KEY:       ${{ secrets.QWEN_API_KEY }}

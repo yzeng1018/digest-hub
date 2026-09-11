@@ -1,8 +1,11 @@
 import nodemailer from 'nodemailer';
 
-const GMAIL_PASS  = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
-const RECIPIENT   = process.env.DIGEST_RECIPIENT   || 'yzeng1018@gmail.com';
-const SENDER      = 'yzeng1018@gmail.com';
+const SMTP_PASS  = (process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD || '').replace(/\s/g, '');
+const RECIPIENT  = process.env.DIGEST_RECIPIENT || 'yzeng1018@gmail.com';
+const SMTP_HOST  = process.env.SMTP_HOST  || 'smtp.163.com';
+const SMTP_PORT  = Number(process.env.SMTP_PORT || 465);
+const SMTP_USER  = process.env.SMTP_USER  || 'samuel295@163.com';
+const FROM_NAME  = process.env.SMTP_FROM_NAME || 'Daily Digest';
 
 function scoreColor(score) {
   if (score >= 8) return '#ff6b6b';
@@ -147,21 +150,24 @@ function buildHtml(articles, dateStr, tokenUsage = {}, tokenMetrics = {}, market
 }
 
 export async function deliver(markdown, articles, dateStr, tokenUsage = {}, tokenMetrics = {}, marketData = null) {
-  if (!GMAIL_PASS) {
-    console.log('[WARN] GMAIL_APP_PASSWORD 未设置，跳过邮件');
+  if (!SMTP_PASS) {
+    console.log('[WARN] SMTP_PASSWORD 未设置，跳过邮件');
     return;
   }
 
-  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+  // 默认经 samuel295@163.com 投递到 Gmail，避免收件箱被自寄自邮件占满。
+  // SMTP_HOST / SMTP_USER 可覆盖；587 端口走 STARTTLS，其余为隐式 SSL。
+  const useStarttls = SMTP_PORT === 587;
   const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: 465,
-    secure: true,
-    auth: { user: SENDER, pass: GMAIL_PASS },
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: !useStarttls,
+    requireTLS: useStarttls,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
     connectionTimeout: 60000,
     greetingTimeout: 60000,
     socketTimeout: 60000,
-    tls: { servername: 'smtp.gmail.com', rejectUnauthorized: false },
+    tls: { servername: SMTP_HOST, rejectUnauthorized: false },
   });
 
   const btc = marketData?.keyCoins?.btc;
@@ -170,7 +176,7 @@ export async function deliver(markdown, articles, dateStr, tokenUsage = {}, toke
   const html = buildHtml(articles, dateStr, tokenUsage, tokenMetrics, marketData);
 
   try {
-    await transporter.sendMail({ from: SENDER, to: RECIPIENT, subject, html });
+    await transporter.sendMail({ from: `${FROM_NAME} <${SMTP_USER}>`, to: RECIPIENT, subject, html });
     console.log(`✉️  邮件已发送 → ${RECIPIENT}`);
   } catch (err) {
     console.log(`[ERROR] 邮件发送失败: ${err.message}`);
