@@ -2,12 +2,10 @@
 """每日投资情报 — 主入口"""
 
 import argparse
-import json
 import os
 import re
 import sys
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -158,35 +156,6 @@ def _apply_insight_quota(
     return result
 
 
-def _dump_ideas(content_ideas: list[dict], date_str: str) -> Path:
-    """Persist today's ideas so the standalone ideas digest can reuse them
-    without re-running the expensive fetch + scoring pipeline."""
-    target_dir = Path(__file__).resolve().parents[2] / "data" / "ideas"
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target = target_dir / f"{date_str}.json"
-    payload = {
-        "date": date_str,
-        "generated_at": datetime.now(ZoneInfo("Asia/Shanghai")).isoformat(),
-        "ideas": [
-            {
-                "topic": idea.get("idea_topic_zh") or "市场线索",
-                "hook": idea.get("news_hook_zh", ""),
-                "angle": idea.get("investment_angle_zh", ""),
-                "signal": idea.get("confirmation_signal_zh", ""),
-                "title": idea.get("title_zh") or idea.get("title", ""),
-                "source": idea.get("source", ""),
-                "url": idea.get("url", "#"),
-            }
-            for idea in content_ideas
-        ],
-    }
-    target.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    print(f"   内容灵感已落盘: data/ideas/{date_str}.json（{len(content_ideas)} 条）")
-    return target
-
-
 def main():
     parser = argparse.ArgumentParser(description="Daily investment digest")
     parser.add_argument("--no-score", action="store_true")
@@ -265,13 +234,10 @@ def main():
 
     output_dir = Path(__file__).parent / "output"
     output_dir.mkdir(exist_ok=True)
-    # CI runs on UTC, so pin the digest date to Beijing time. Otherwise a run
-    # that fires before UTC midnight labels the email with yesterday's date.
-    date_str    = datetime.now(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d")
+    date_str    = datetime.now().strftime("%Y-%m-%d")
     output_path = args.output or str(output_dir / f"{date_str}.html")
     render(articles, output_path, usage_info=usage_info, model_metrics=model_metrics)
     record_content_ideas(content_ideas, idea_history_path)
-    _dump_ideas(content_ideas, date_str)
 
     if not args.no_email:
         send_digest(articles, usage_info=usage_info, model_metrics=model_metrics)
