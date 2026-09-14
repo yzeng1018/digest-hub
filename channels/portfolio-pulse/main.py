@@ -18,6 +18,7 @@ import argparse
 import json
 import os
 import sys
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -167,7 +168,9 @@ def main() -> None:
         print(f"新闻/报送命中 {got} 只", flush=True)
 
     alerts, quiet, totals = enrich(holdings, quotes, news)
-    print(f"重点 {len(alerts)} 只 · 无异动 {len(quiet)} 只", flush=True)
+    tally = Counter(r for _, _, _, rs in alerts for r in rs)
+    print(f"重点 {len(alerts)} 只 · 无异动 {len(quiet)} 只 · 触发原因 {dict(tally)}",
+          flush=True)
 
     overview = ""
     if not args.no_llm:

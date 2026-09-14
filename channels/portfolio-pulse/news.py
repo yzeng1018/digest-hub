@@ -138,7 +138,8 @@ def _google_news(query: str, market: str, hours: int | None = None,
         # 标题里的 " - 来源" 后缀去掉
         title = re.sub(r"\s+-\s+[^-]+$", "", title) if source else title
         out.append({"title": title, "link": link, "source": source,
-                    "published": when.strftime("%m-%d %H:%M") if when else ""})
+                    "published": when.strftime("%m-%d %H:%M") if when else "",
+                    "ts": when.timestamp() if when else None})
         if len(out) >= limit:
             break
     return out
@@ -162,9 +163,11 @@ def fetch_earnings_news(name: str, ticker: str, market: str,
         query = f"{ticker} {name} earnings results"
     else:
         query = f"{name} 财报 业绩"
-    hits = [r for r in _google_news(query, market, days=days, limit=limit * 2)
+    hits = [r for r in _google_news(query, market, days=days, limit=limit * 3)
             if _is_earnings(r["title"])]
-    rows = hits[:limit]
+    # 同一份财报的报道会连着出好几天，只留最新的那波
+    fresh = time.time() - config.EARNINGS_FRESH_DAYS * 86400
+    rows = [r for r in hits if r.get("ts") is None or r["ts"] >= fresh][:limit]
     for r in rows:
         r["kind"] = "earnings"
     return rows
