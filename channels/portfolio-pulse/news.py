@@ -152,21 +152,30 @@ def fetch_news(name: str, ticker: str, market: str,
 
 
 def fetch_earnings_news(name: str, ticker: str, market: str,
-                        days: int = 21, limit: int = 6) -> list[dict]:
-    """专门搜财报/业绩报道。窗口按天算——财报是季度事件，48 小时抓不到。"""
+                        days: int = 10, limit: int = 6) -> list[dict]:
+    """专门搜财报/业绩报道。窗口按天算——财报是季度事件，48 小时抓不到。
+
+    搜索结果还要用 _is_earnings 再过一遍：Google News 的相关性很松，
+    「快手 财报」能搜出一堆券商观点和行业综述。
+    """
     if market == "US":
         query = f"{ticker} {name} earnings results"
     else:
         query = f"{name} 财报 业绩"
-    rows = _google_news(query, market, days=days, limit=limit)
+    hits = [r for r in _google_news(query, market, days=days, limit=limit * 2)
+            if _is_earnings(r["title"])]
+    rows = hits[:limit]
     for r in rows:
         r["kind"] = "earnings"
     return rows
 
 
 def _is_earnings(title: str) -> bool:
+    """两道关：先有财报事件词，再要有数字或比较，避免研报综述混入。"""
     low = (title or "").lower()
-    return any(k.lower() in low for k in config.EARNINGS_KEYWORDS)
+    if not any(w in low for w in config.EARNINGS_EVENT_WORDS):
+        return False
+    return any(w in low for w in config.EARNINGS_FACT_WORDS)
 
 
 def build_news(holdings: list[dict], hours: int = 48) -> dict[str, dict]:

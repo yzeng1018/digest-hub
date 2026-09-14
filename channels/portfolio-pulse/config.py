@@ -17,23 +17,32 @@ FILING_DAYS = 14
 # 只有这几类才算真正的财报文件；6-K / 8-K 多为杂项公告，不单独触发重点
 EARNINGS_FORMS = {"10-K", "10-Q", "20-F"}
 
-# 财报报道回溯天数：财报是季度事件，窗口必须按天算
-EARNINGS_NEWS_DAYS = 21
+# 财报报道回溯天数。财报是季度事件，窗口得按天算；但拉太长会变成「过去三周
+# 有人提过一次业绩」也算数，实测 21 天会让 24 只里 19 只都亮起来，失去意义
+EARNINGS_NEWS_DAYS = 10
 
 # 新闻回溯小时数
 NEWS_HOURS = 48
 
+# 判定「这条新闻真的在说财报」的两道关：先要有事件词，再要有数字或比较。
+# 只有事件词的多半是券商研报、行业综述、估值闲谈
+EARNINGS_EVENT_WORDS = [
+    "财报", "业绩", "季报", "年报", "半年报", "中报", "一季报", "三季报", "业绩会",
+    "一季度", "二季度", "三季度", "四季度", "上半年", "下半年", "中期业绩",
+    "earnings", "quarterly", "quarter", "q1", "q2", "q3", "q4",
+    "annual results", "interim results", "results",
+]
+# 不用裸 % 和 rose/fell 这类涨跌词：一条「Q2 交付量涨 25%」会因此被当成财报
+EARNINGS_FACT_WORDS = [
+    "同比", "环比", "增长", "下降", "超预期", "低于预期", "预增", "预减",
+    "预亏", "扭亏", "营收", "净利", "净利润", "亏损", "毛利", "指引",
+    "beat", "miss", "estimate", "guidance", "revenue", "profit",
+    "net income", "margin", "eps", "vs.",
+]
+
 # LLM 研判：无 key 或超时就静默跳过，不挡邮件
 LLM_PROVIDER = os.environ.get("PORTFOLIO_LLM_PROVIDER", "deepseek")
 LLM_MAX_ITEMS = 10
-
-# 命中任一关键词的新闻视为「重点」，而非普通资讯
-EARNINGS_KEYWORDS = [
-    "财报", "业绩", "季报", "年报", "半年报", "营收", "净利", "亏损",
-    "指引", "预告", "回购", "分红", "增持", "减持", "停牌", "退市",
-    "earnings", "quarterly", "results", "guidance", "revenue",
-    "profit", "loss", "buyback", "dividend", "downgrade", "upgrade",
-]
 
 # 折算人民币用；实际汇率波动不大，固定值足够
 FX = {"USD": 7.20, "HKD": 0.92, "CNY": 1.0, "": 1.0}
