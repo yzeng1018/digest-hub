@@ -8,3 +8,7 @@ logs/
 .DS_Store
 .gstack/
 node_modules/
+
+# 本地持仓样本（含真实股数，禁止入库）
+channels/portfolio-pulse/holdings.sample.json
+channels/portfolio-pulse/output/

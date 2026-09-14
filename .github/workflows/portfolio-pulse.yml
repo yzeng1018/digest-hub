@@ -1,0 +1,30 @@
+name: 持仓分析 Daily Digest
+
+on:
+  # 北京时间 07:50，周一至周六。跳过周日：周六美股与 A 股/港股均无新数据。
+  # 这个时点能同时覆盖昨夜美股收盘和上一交易日的 A 股/港股。
+  schedule:
+    - cron: "50 23 * * 0-5"
+  workflow_dispatch:
+
+jobs:
+  portfolio:
+    name: 我的持仓分析
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r channels/portfolio-pulse/requirements.txt
+
+      - name: 运行持仓分析
+        env:
+          PORTFOLIO_HOLDINGS: ${{ secrets.PORTFOLIO_HOLDINGS }}
+          SMTP_PASSWORD:      ${{ secrets.SMTP_PASSWORD }}
+          DIGEST_RECIPIENT:   ${{ secrets.DIGEST_RECIPIENT }}
+        run: python channels/portfolio-pulse/main.py
