@@ -24,41 +24,86 @@ def _money(v: float) -> str:
     return f"{v:,.0f}"
 
 
-def _news_rows(news: list[dict]) -> str:
+def _news_rows(news: list[dict], tag: str = "", tag_bg: str = "#f1f3f4",
+               tag_fg: str = "#5f6368") -> str:
     if not news:
         return ""
-    rows = "".join(
-        f'<div style="margin-top:5px;font-size:13px;line-height:1.5;">'
-        f'<a href="{escape(n["link"])}" style="color:#1a73e8;text-decoration:none;">'
-        f'{escape(n["title"])}</a>'
-        f'<span style="color:#9aa0a6;font-size:12px;"> · {escape(n["source"])} · {n["published"]}</span></div>'
-        for n in news
-    )
+    rows = ""
+    for n in news:
+        label = (f'<span style="display:inline-block;padding:0 5px;border-radius:3px;'
+                 f'background:{tag_bg};color:{tag_fg};font-size:11px;'
+                 f'margin-right:5px;">{tag}</span>') if tag else ""
+        rows += (
+            f'<div style="margin-top:5px;font-size:13px;line-height:1.5;">{label}'
+            f'<a href="{escape(n["link"])}" style="color:#1a73e8;text-decoration:none;">'
+            f'{escape(n["title"])}</a>'
+            f'<span style="color:#9aa0a6;font-size:12px;"> · {escape(n["source"])} · {n["published"]}</span></div>'
+        )
     return f'<div style="margin-top:8px;">{rows}</div>'
 
 
 def _filings_row(filings: list[dict]) -> str:
     if not filings:
         return ""
-    chips = "".join(
-        f'<a href="{escape(f["url"])}" style="display:inline-block;margin-right:6px;'
-        f'padding:2px 8px;border-radius:4px;background:#fef7e0;color:#8a6100;'
-        f'font-size:12px;font-weight:500;text-decoration:none;">'
-        f'{escape(f["form"])} · {f["date"]}</a>'
-        for f in filings
-    )
+    chips = ""
+    for f in filings:
+        earn = f.get("isEarnings")
+        bg, fg = ("#fef7e0", "#8a6100") if earn else ("#f1f3f4", "#5f6368")
+        chips += (
+            f'<a href="{escape(f["url"])}" style="display:inline-block;margin-right:6px;'
+            f'padding:2px 8px;border-radius:4px;background:{bg};color:{fg};'
+            f'font-size:12px;font-weight:{"600" if earn else "500"};text-decoration:none;">'
+            f'{escape(f["form"])} · {f["date"]}</a>'
+        )
     return (f'<div style="margin-top:7px;"><span style="font-size:12px;color:#9aa0a6;">'
-            f'新报送 </span>{chips}</div>')
+            f'官方报送 </span>{chips}</div>')
+
+
+def _verdict_row(info: dict) -> str:
+    """LLM 研判：一句话结论 + 财报要点 + 后续关注点。"""
+    data = info.get("llm") or {}
+    verdict = (data.get("verdict") or "").strip()
+    if not verdict:
+        return ""
+    parts = [f'<div style="font-size:13px;color:#202124;line-height:1.6;">{escape(verdict)}</div>']
+    earnings = (data.get("earnings") or "").strip()
+    if earnings:
+        parts.append(
+            f'<div style="font-size:12px;color:#8a6100;line-height:1.6;margin-top:4px;">'
+            f'<span style="color:#9aa0a6;">财报 </span>{escape(earnings)}</div>')
+    watch = (data.get("watch") or "").strip()
+    if watch:
+        parts.append(
+            f'<div style="font-size:12px;color:#5f6368;line-height:1.6;margin-top:4px;">'
+            f'<span style="color:#9aa0a6;">关注 </span>{escape(watch)}</div>')
+    driver = (data.get("driver") or "").strip()
+    label = ""
+    if driver and driver != "信息不足":
+        label = (f'<span style="display:inline-block;padding:1px 7px;border-radius:3px;'
+                 f'font-size:11px;background:#e8f0fe;color:#1967d2;margin-left:5px;">'
+                 f'{escape(driver)}</span>')
+    return (
+        f'<div style="margin-top:9px;padding:9px 11px;border-radius:7px;'
+        f'background:#f8f9fb;border-left:3px solid #c5d4f1;">'
+        f'<div style="font-size:11px;color:#9aa0a6;letter-spacing:1px;">AI 研判{label}</div>'
+        + "".join(parts) + "</div>")
+
+
+def _badge(r: str) -> str:
+    if r == "财报":
+        bg, fg = "#fef7e0", "#8a6100"
+    elif r == "异动":
+        bg, fg = "#fce8e6", "#c5221f"
+    else:
+        bg, fg = "#f1f3f4", "#5f6368"
+    return (f'<span style="display:inline-block;padding:1px 7px;border-radius:3px;'
+            f'font-size:11px;background:{bg};color:{fg};margin-left:5px;">{escape(r)}</span>')
 
 
 def _card(h: dict, q: dict, info: dict, reasons: list[str]) -> str:
     pct = q.get("chgPct") or 0.0
     c = _color(pct)
-    badge = "".join(
-        f'<span style="display:inline-block;padding:1px 7px;border-radius:3px;'
-        f'font-size:11px;background:#f1f3f4;color:#5f6368;margin-left:5px;">{escape(r)}</span>'
-        for r in reasons
-    )
+    badge = "".join(_badge(r) for r in reasons)
     return f"""
     <tr><td style="padding:14px 18px;border-bottom:1px solid #eceff1;">
       <table width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -75,11 +120,19 @@ def _card(h: dict, q: dict, info: dict, reasons: list[str]) -> str:
             {escape(h['sector'])} · 持仓 {h['quantity']:,.0f} 股 · 市值 {_money(info['valueCny'])} · 成本 {h['avgCost']:.2f}
             <span style="color:{_color(info['pnlCny'])};">（{_sign(info['pnlCny'] / max(info['costCny'], 1) * 100)}）</span>
           </div>
+          {_verdict_row(info)}
+          {_news_rows(info.get('earnings') or [], tag="财报", tag_bg="#fef7e0", tag_fg="#8a6100")}
           {_filings_row(info.get('filings') or [])}
-          {_news_rows(info.get('news') or [])}
+          {_news_rows(_plain_news(info))}
         </td>
       </tr></table>
     </td></tr>"""
+
+
+def _plain_news(info: dict) -> list[dict]:
+    """普通新闻：已在财报区出现过的不再重复。"""
+    seen = {n.get("title") for n in (info.get("earnings") or [])}
+    return [n for n in (info.get("news") or []) if n.get("title") not in seen]
 
 
 def _quiet_rows(items: list[tuple[dict, dict, dict]]) -> str:
@@ -125,6 +178,15 @@ def render(payload: dict) -> str:
         今日无个股触发异动或重点事件，全部持仓见下方汇总表。
       </td></tr>"""
 
+    overview = (payload.get("overview") or "").strip()
+    overview_html = ""
+    if overview:
+        overview_html = f"""
+      <tr><td style="padding:14px 18px;background:#f8f9fb;border-bottom:1px solid #eceff1;">
+        <div style="font-size:11px;color:#9aa0a6;letter-spacing:1px;">AI 总览</div>
+        <div style="font-size:13px;color:#202124;line-height:1.65;margin-top:5px;">{escape(overview)}</div>
+      </td></tr>"""
+
     quiet_html = ""
     if quiet:
         quiet_html = f"""
@@ -166,11 +228,12 @@ def render(payload: dict) -> str:
   </td></tr>
   <tr><td style="background:#fff;border-radius:0 0 12px 12px;border:1px solid #e3e5e8;border-top:none;">
     <table width="100%" cellpadding="0" cellspacing="0">
+      {overview_html}
       {alert_html}
       {quiet_html}
       <tr><td style="padding:12px;text-align:center;background:#fafbfc;border-radius:0 0 12px 12px;">
         <div style="font-size:11px;color:#b0b4b9;">
-          仅推送异动与重点事件 · 行情源新浪财经 · 报送源 SEC EDGAR · 汇率 USD 7.20 / HKD 0.92
+          仅推送异动与重点事件 · 行情源新浪财经 · 财报与新闻源 Google News · 报送 SEC EDGAR
         </div>
       </td></tr>
     </table>

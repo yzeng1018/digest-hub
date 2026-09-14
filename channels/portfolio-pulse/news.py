@@ -1,9 +1,8 @@
 """新闻与财报抓取。
 
-新闻走 Google News RSS（中文查公司名、英文查代码），覆盖 A 股/港股/美股。
-美股财报用 SEC EDGAR：先用 company_tickers.json 把代码换成 CIK，
-再查该公司的 submissions 拿最近 filings。港股与 A 股没有等价的免费接口，
-财报动态同样交给新闻覆盖。
+财报走新闻媒体，不再只盯 SEC：Google News 按「公司名 + 财报/业绩」回溯三周，
+中英文各按各的说法搜，SEC 报送只作为美股侧的官方佐证。三市都没有可靠的免费
+财报 API（披露易与巨潮要爬复杂接口），所以媒体反而是最省事也最可读的一层。
 """
 
 import re
@@ -12,6 +11,8 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 
 import requests
+
+import config
 
 SEC_UA = "digest-hub portfolio-pulse (contact: yzeng1018@gmail.com)"
 HEADERS = {"User-Agent": SEC_UA, "Accept-Encoding": "gzip, deflate"}
@@ -98,29 +99,37 @@ def _news_url(query: str, market: str) -> str:
                               hl="en-US", gl="US", ceid="US:en")
 
 
-def fetch_news(name: str, ticker: str, market: str,
-               hours: int = 48, limit: int = 5) -> list[dict]:
-    """抓最近 hours 小时内与该持仓相关的新闻。"""
-    query = name if market in ("A", "HK") else f"{ticker} {name}"
+def _google_news(query: str, market: str, hours: int | None = None,
+                 days: int | None = None, limit: int = 5) -> list[dict]:
+    """拉 Google News RSS，按小时内或天数内过滤。"""
+    suffix = f" when:{days}d" if days else ""
+    url = _news_url(query + suffix, market)
     try:
-        resp = requests.get(_news_url(query, market),
-                            headers={"User-Agent": SEC_UA}, timeout=20)
+        resp = requests.get(url, headers={"User-Agent": SEC_UA}, timeout=25)
         root = ET.fromstring(resp.content)
-    except Exception:
+    except Exception as exc:
+        print(f"[WARN] 新闻抓取失败 {query}: {exc}", flush=True)
         return []
 
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    cutoff = None
+    if hours:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    elif days:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
     out = []
     for item in root.iter("item"):
         title = (item.findtext("title") or "").strip()
         link = (item.findtext("link") or "").strip()
         pub = (item.findtext("pubDate") or "").strip()
+        when = None
         try:
             when = datetime.strptime(pub, "%a, %d %b %Y %H:%M:%S %Z").replace(
                 tzinfo=timezone.utc)
         except ValueError:
-            continue
-        if when < cutoff:
+            # 少数条目换过格式，放行但标不出时间
+            pass
+        if cutoff and when and when < cutoff:
             continue
         source = ""
         src_el = item.find("source")
@@ -129,19 +138,63 @@ def fetch_news(name: str, ticker: str, market: str,
         # 标题里的 " - 来源" 后缀去掉
         title = re.sub(r"\s+-\s+[^-]+$", "", title) if source else title
         out.append({"title": title, "link": link, "source": source,
-                    "published": when.strftime("%m-%d %H:%M")})
+                    "published": when.strftime("%m-%d %H:%M") if when else ""})
         if len(out) >= limit:
             break
     return out
 
 
+def fetch_news(name: str, ticker: str, market: str,
+               hours: int = 48, limit: int = 5) -> list[dict]:
+    """抓最近 hours 小时内与该持仓相关的新闻。"""
+    query = name if market in ("A", "HK") else f"{ticker} {name}"
+    return _google_news(query, market, hours=hours, limit=limit)
+
+
+def fetch_earnings_news(name: str, ticker: str, market: str,
+                        days: int = 21, limit: int = 6) -> list[dict]:
+    """专门搜财报/业绩报道。窗口按天算——财报是季度事件，48 小时抓不到。"""
+    if market == "US":
+        query = f"{ticker} {name} earnings results"
+    else:
+        query = f"{name} 财报 业绩"
+    rows = _google_news(query, market, days=days, limit=limit)
+    for r in rows:
+        r["kind"] = "earnings"
+    return rows
+
+
+def _is_earnings(title: str) -> bool:
+    low = (title or "").lower()
+    return any(k.lower() in low for k in config.EARNINGS_KEYWORDS)
+
+
 def build_news(holdings: list[dict], hours: int = 48) -> dict[str, dict]:
-    """{ticker: {'news': [...], 'filings': [...]}}"""
+    """{ticker: {'news': [...], 'earnings': [...], 'filings': [...]}}
+
+    earnings 是财报相关报道（专搜 + 普通新闻里命中关键词的），
+    filings 只有美股有，带 isEarnings 标出哪些是真正的财报文件。
+    """
     result: dict[str, dict] = {}
     for h in holdings:
         t = h["ticker"]
         news = fetch_news(h["name"], t, h["market"], hours=hours)
-        filings = fetch_filings(t) if h["market"] == "US" else []
-        result[t] = {"news": news, "filings": filings}
+        earnings = fetch_earnings_news(
+            h["name"], t, h["market"], days=config.EARNINGS_NEWS_DAYS)
+
+        seen = {n["title"] for n in earnings}
+        for n in news:
+            if _is_earnings(n["title"]) and n["title"] not in seen:
+                row = dict(n, kind="earnings")
+                earnings.append(row)
+                seen.add(n["title"])
+
+        filings = []
+        if h["market"] == "US":
+            for f in fetch_filings(t, days=config.FILING_DAYS):
+                f["isEarnings"] = f["form"] in config.EARNINGS_FORMS
+                filings.append(f)
+
+        result[t] = {"news": news, "earnings": earnings, "filings": filings}
         time.sleep(0.2)
     return result

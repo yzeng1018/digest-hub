@@ -3,6 +3,8 @@
 阈值按「只推异动与重点」的原则设定：安静的日子里邮件应该很短。
 """
 
+import os
+
 # 涨跌幅绝对值超过该值即视为异动
 MOVE_PCT = 2.0
 
@@ -12,8 +14,18 @@ PNL_PCT_ALERT = 15.0
 # SEC 报送回溯天数
 FILING_DAYS = 14
 
+# 只有这几类才算真正的财报文件；6-K / 8-K 多为杂项公告，不单独触发重点
+EARNINGS_FORMS = {"10-K", "10-Q", "20-F"}
+
+# 财报报道回溯天数：财报是季度事件，窗口必须按天算
+EARNINGS_NEWS_DAYS = 21
+
 # 新闻回溯小时数
 NEWS_HOURS = 48
+
+# LLM 研判：无 key 或超时就静默跳过，不挡邮件
+LLM_PROVIDER = os.environ.get("PORTFOLIO_LLM_PROVIDER", "deepseek")
+LLM_MAX_ITEMS = 10
 
 # 命中任一关键词的新闻视为「重点」，而非普通资讯
 EARNINGS_KEYWORDS = [
