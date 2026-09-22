@@ -55,3 +55,4 @@
 {"ts":"2026-09-18T23:39:38Z","project":"digest-hub/crypto","model":"qwen-max","provider":"qwen","scheduled_provider":"qwen","experiment_date":"2026-09-19","parse_rate":1,"score_spread":1.41,"translation_rate":1,"perf_score":8.41}
 {"ts":"2026-09-19T23:33:31Z","project":"digest-hub/crypto","model":"deepseek-flash","provider":"deepseek","scheduled_provider":"deepseek","experiment_date":"2026-09-20","parse_rate":1,"score_spread":1.5,"translation_rate":1,"perf_score":8.5}
 {"ts":"2026-09-20T23:31:42Z","project":"digest-hub/crypto","model":"qwen-max","provider":"qwen","scheduled_provider":"qwen","experiment_date":"2026-09-21","parse_rate":1,"score_spread":1.03,"translation_rate":1,"perf_score":8.03}
+{"ts":"2026-09-22T00:18:26Z","project":"digest-hub/crypto","model":"deepseek-flash","provider":"deepseek","scheduled_provider":"deepseek","experiment_date":"2026-09-22","parse_rate":1,"score_spread":1.49,"translation_rate":1,"perf_score":8.49}
