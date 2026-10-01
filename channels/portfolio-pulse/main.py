@@ -38,7 +38,12 @@ from render import render  # noqa: E402
 OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 
 
-def load_portfolio() -> list[dict]:
+def load_portfolio() -> tuple[list[dict], str]:
+    """返回 (持仓列表, 快照日期)。
+
+    快照日期很关键：Secret 是静态快照，portfolio.json 改了不会自动同步，
+    界面上必须能看出这份数据是哪天的，否则会拿旧持仓当今天的看。
+    """
     raw = os.environ.get("PORTFOLIO_HOLDINGS", "").strip()
     if not raw:
         local = Path(__file__).resolve().parent / "holdings.sample.json"
@@ -47,7 +52,8 @@ def load_portfolio() -> list[dict]:
         else:
             raise SystemExit("未设置 PORTFOLIO_HOLDINGS 且无本地样本文件")
     data = json.loads(raw)
-    return data.get("holdings", data if isinstance(data, list) else [])
+    holdings = data.get("holdings", data if isinstance(data, list) else [])
+    return holdings, str(data.get("updated", ""))
 
 
 def enrich(holdings: list[dict], quotes: dict, news: dict) -> tuple[list, list, dict]:
@@ -156,8 +162,9 @@ def main() -> None:
     args = ap.parse_args()
 
     date_str = args.date or datetime.now(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d")
-    holdings = load_portfolio()
-    print(f"持仓 {len(holdings)} 只 · {date_str}", flush=True)
+    holdings, holdings_updated = load_portfolio()
+    print(f"持仓 {len(holdings)} 只 · 快照 {holdings_updated or '未知'} · {date_str}",
+          flush=True)
 
     quotes = fetch_quotes(holdings)
     print(f"行情取到 {len(quotes)}/{len(holdings)}", flush=True)
@@ -191,6 +198,7 @@ def main() -> None:
 
     payload = {
         "date": date_str,
+        "holdingsUpdated": holdings_updated,
         "count": len(holdings),
         "overview": overview,
         "totalValueCny": totals["value"],

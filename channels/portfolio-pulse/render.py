@@ -1,11 +1,34 @@
 """HTML 渲染：重点持仓展开，其余一行带过。"""
 
+from datetime import datetime
 from html import escape
 
 from config import MARKET_LABEL, MARKET_NOTE, MARKET_ORDER
 
 # 中国市场红涨绿跌
 RED, GREEN, GRAY = "#d93025", "#1e8e3e", "#5f6368"
+
+# 持仓快照超过这个天数就高亮提醒：Secret 是静态的，portfolio.json 改了不会自动同步
+STALE_DAYS = 7
+
+
+def _stale_badge(updated: str, today: str) -> str:
+    """显示持仓快照日期，过旧则标黄，避免误把旧持仓当今天的看。"""
+    if not updated:
+        return ('<span style="display:inline-block;padding:2px 8px;border-radius:20px;'
+                'background:rgba(255,167,38,0.22);color:#ffb74d;font-size:11px;">'
+                '持仓快照日期未知</span>')
+    try:
+        days = (datetime.strptime(today, "%Y-%m-%d")
+                - datetime.strptime(updated, "%Y-%m-%d")).days
+    except ValueError:
+        return ""
+    if days <= STALE_DAYS:
+        return (f'<span style="font-size:12px;color:rgba(255,255,255,0.5);">'
+                f'持仓快照 {updated}</span>')
+    return (f'<span style="display:inline-block;padding:2px 8px;border-radius:20px;'
+            f'background:rgba(255,167,38,0.22);color:#ffb74d;font-size:11px;">'
+            f'持仓快照 {updated} · {days} 天前，可能已变动</span>')
 
 
 def _color(v: float) -> str:
@@ -214,7 +237,7 @@ def render(payload: dict) -> str:
 <table width="660" cellpadding="0" cellspacing="0" style="max-width:660px;width:100%;">
   <tr><td style="background:#1f2937;border-radius:12px 12px 0 0;padding:24px;">
     <div style="font-size:20px;font-weight:700;color:#fff;">我的持仓分析</div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.65);margin-top:4px;">{date_str} · 共 {payload['count']} 只</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.65);margin-top:4px;">{date_str} · 共 {payload['count']} 只 · {_stale_badge(payload.get('holdingsUpdated', ''), date_str)}</div>
     <div style="margin-top:16px;">
       <span style="display:inline-block;padding:2px 10px;border-radius:20px;background:rgba(255,255,255,0.12);color:#fff;font-size:12px;">总市值 {_money(total)}</span>
       <span style="display:inline-block;padding:2px 10px;border-radius:20px;margin-left:8px;font-size:12px;font-weight:600;

@@ -28,6 +28,22 @@ SECRET_NAME = "PORTFOLIO_HOLDINGS"
 
 STOCK_TYPES = {"stock_hk": "HK", "stock_us": "US", "stock_a": "A"}
 
+# 源数据里期权条目也被标成 assetType=stock_us，光看类型分不出来，会把
+# 已作废的价外期权当成真实持仓计入市值。例：us-opt-tcom-002（携程 $53.55
+# 期权，2026-09-16 到期归零，现价远低于行权价）曾虚增 109.85 万市值。
+# 排除规则：id 在名单里，或名称含「期权」但不含「已行权」（已行权的已是股票）。
+EXCLUDE_IDS = {"us-opt-tcom-002"}
+DERIVATIVE_NAME_HINT = "期权"
+SETTLED_NAME_HINT = "已行权"
+
+
+def is_derivative(item: dict) -> bool:
+    """判断这条是不是还没转成股票的期权/衍生品，是则不计入持仓。"""
+    if item.get("id") in EXCLUDE_IDS:
+        return True
+    name = item.get("name", "")
+    return DERIVATIVE_NAME_HINT in name and SETTLED_NAME_HINT not in name
+
 # 行业归属，用于分组与「同行业联动」判断。新增持仓时在此补一行即可。
 SECTOR = {
     "1024.HK": "互联网 · 短视频",
@@ -77,6 +93,9 @@ def load_holdings(path: Path) -> list[dict]:
             continue
         qty = float(item.get("quantity") or 0)
         if qty <= 0:
+            continue
+        if is_derivative(item):
+            print(f"  跳过衍生品条目: {item.get('id')} {item.get('name')}", flush=True)
             continue
         ticker = normalize_ticker(item.get("ticker", ""), market)
         if not ticker:
