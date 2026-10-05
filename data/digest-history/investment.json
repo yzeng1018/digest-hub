@@ -1,110 +1,6 @@
 {
   "items": [
     {
-      "date": "2026-09-04",
-      "title": "SoFi 与 Kraken 联手，搭建银行业务、稳定币及加密交易桥梁 - CoinDesk",
-      "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxQYmNTVUp5OG5LUktVTUJPdUE5MkRGM01Kd25VVkpQOU1yQWZHSFZ3TU96RXlvd1hYRXRTY0lsTVRpS0padVh2cmY5ZXdpQTZjTDVEdUdpVGVjcWdiaWhMbjNnblRNRnZPTXZsbWF4ckZhU0dyMW5FZjJ2cGNiV1h1ak9XWjVyM0ZtOWx0QmRBeUtUVFFQOVBjUWRPTG5Kd1N5clZYZFI2UkprRGtQZjhiRUdESGFoX1U?oc=5",
-      "companies": [
-        "SoFi Technologies"
-      ]
-    },
-    {
-      "date": "2026-09-04",
-      "title": "Q2研发涨得比收入快，美团AI在押什么 - 新浪网",
-      "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE5XblF5SERLb002UDVLTjR3UmgwakVZSjRvNXhOTngtdDlRMm1UbUk4R3BaT21JVlp0MFZodmlydUFOR3UtUDFhX1NTV0sxUmI1Mi1HS1MyaU4tQmNCZUd5YnlaakhGSzZKR2N1MVZnNXpIWUxTckpyVnRfeERTaEU?oc=5",
-      "companies": [
-        "美团"
-      ]
-    },
-    {
-      "date": "2026-09-04",
-      "title": "中国平安实施2026年半年度分红，每股派发0.98元，合计177.45亿元 - 东方财富",
-      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE5mUmMxbWtZSWhmbGN0d2ZvdjE3S1QwMTBrdUlaN1d1QjJVOFhJN28wTUpSLU1WdUwzNXNNRDduYjRqUnJDY0pNdDQ1WEtKbkJjTHJUQWprVTVybWVVY3hXZw?oc=5",
-      "companies": [
-        "中国平安"
-      ]
-    },
-    {
-      "date": "2026-09-04",
-      "title": "即时零售万亿赛道激战，盒马前置仓补上阿里短板 - 金融界",
-      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE5JVkRpYUx4RjNnX21PY0RGZjQ1QmZ4YkdKdFhLb1Y1d09jc3czZV9QeDFiZmx1Sktoek50M0Y2Z1g3Z0xBVUsycXNoVGdpcW9LZ0EwRmpvQVNWYldUTWtkU3p6ZTBTN2xmTWdoLWwyYmdOWlp6?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-04",
-      "title": "2.8亿人消费，三大计划扶持，快手加码AIGC - 新浪财经",
-      "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxQckY4dFhXREFsbFkzcTVBZGxkTWVTSFRqZFBtWE5FbGFEN1RpZ0x5bjZ4WkU1Smc4blNhOEZ1WUFsZ0FJYUJvZ240Sk5sUnAwWWh3UGpKWmNSMzFmYVlhcmZUY2RMbDlFNHBEYUVLb2FhZkpZemliX3dFTGlTS09rZ3Z3X1FLcGg1WXgxTVc0WE5hVHBlakJrYk40RUdHbFNjRUllUmxCVQ?oc=5",
-      "companies": [
-        "快手"
-      ]
-    },
-    {
-      "date": "2026-09-04",
-      "title": "中信证券：煤价中枢有望上移年内行情有望震荡上行_证券要闻 - 证券之星",
-      "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTFBuZ2NJU0MxOTRnVFB1U3Z4ZklCb3BqY1RmTElJMjd1bU10TjNHTWlERFNoMGlMalN6eTg2RW5seVptVU1CclJGeDNhWVFMT2d2SFUwbGdFMm5LTmN5c3pCc25B?oc=5",
-      "companies": [
-        "中信证券"
-      ]
-    },
-    {
-      "date": "2026-09-04",
-      "title": "科创半导体设备ETF鹏华(589020)备受关注，国际晶圆代工龙头设备采购预估值翻倍 - 新浪财经",
-      "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE1DTFJZOFZpdnNsX242LVdBNVllckZfdlRuMUdsWWtreDloS2g3b29LLWV5OUZlRkptVGRTNXJUaV9ZUGlVejhDT1A5TnFGbVlVVVNQMXh5ckVGWDNxZDQ5dVhiV3FQcDFyWV9YVFR6SQ?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-04",
-      "title": "斥资3.12亿元，余杭区密集采购AI教育服务 - 新浪网",
-      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE0zZEdIQzRYS1dsa0RWVGh1bUROOU1TSl9sQjhieGtUeDUxWkZGSHNmOFhsLS1GZzhEZWVtSTNveFlodG9PdTJKZ095X213MVZOUkZvSkRfVDNYZmlMbU55dTRlYTNLOE93ZjZXbkpzM1JmZWw0ZXJDOTdibHU?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-04",
-      "title": "Startup ARR is less secure than ever, new research shows",
-      "url": "https://techcrunch.com/2026/09/03/startup-arr-is-less-secure-than-ever-new-research-shows",
-      "companies": []
-    },
-    {
-      "date": "2026-09-04",
-      "title": "Qualcomm backs Ultrahuman in $70M round on bet to turn smart rings into computers",
-      "url": "https://techcrunch.com/2026/09/03/qualcomm-backs-ultrahuman-in-70m-round-on-bet-to-turn-smart-rings-into-computers",
-      "companies": []
-    },
-    {
-      "date": "2026-09-04",
-      "title": "携程集团-S遭美国资本集团减持182.0631万股 每股作价约349.7港元 - 新浪财经",
-      "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxQb3hramo2VnhDaGxYTWh2WTh6bWMxTnNEWEdRbW80OW1oMVNTVXY1cU1RNHZOanpyZW9oZDUxVW9fajRXMnRrYWFEVjd4UU5aaWhzeVREeDE4QU9qb3BlR1JFY2hWYzB5ckRVTHA3cW5xczZNcnBzaERhcVgzb0NlT0dXUHhTVkE4RjFQOUpR?oc=5",
-      "companies": [
-        "携程集团"
-      ]
-    },
-    {
-      "date": "2026-09-04",
-      "title": "Global Venture Funding Jumps 122% In August As Streak Of Billion-Dollar Deals Continues",
-      "url": "https://news.crunchbase.com/venture/global-funding-billion-dollar-deals-august-2026",
-      "companies": []
-    },
-    {
-      "date": "2026-09-04",
-      "title": "Accel reportedly in talks to lead $1B round for Thinking Machines at $40B valuation",
-      "url": "https://techcrunch.com/2026/09/03/accel-reportedly-in-talks-to-lead-1b-round-for-thinking-machines-at-40b-valuation",
-      "companies": []
-    },
-    {
-      "date": "2026-09-04",
-      "title": "Sarah Guo - Funding the Frontier - [Invest Like the Best, EP.489]",
-      "url": "https://colossus.com/episode/no-priors-just-conviction",
-      "companies": []
-    },
-    {
-      "date": "2026-09-04",
-      "title": "宁德时代董事长：大家比速度、比参数、比价格，却牺牲产品质量和消费者信任 - 东方财富",
-      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE9pUThWT1FabWltTHBSTUc1VHU5SzRjV2lwem1faXlreC1Kd0tfYzlCQ1dRa1k2U3RTcTFtNHpvWmdVZk83YUZubkVVM2dCdV9hTy1jVXY0LTZfTTEtb3MtcQ?oc=5",
-      "companies": [
-        "宁德时代"
-      ]
-    },
-    {
       "date": "2026-09-05",
       "title": "Figma Grew 48% Last Quarter. It Expects 36% Next. Here’s Where the Stock Could Go - TIKR.com",
       "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxQR181a0NabEFuazBzTVFjWXdjNzBWRzFIdWphTF9QTjUwcXZFaFRyZWVFX0JFVWdwbTI5eVR6c1Z0T2lwTGc4SzdleXBvOC1saUJDR1pYR29lc1M3eHFMVGNENWtia1R1UXhBVUZONkE4LUhDZ25PVFowV0hvMTI4OHpsZjN4a0l0NEUtdVRBWFIxTkVBLWZyUlF3OVpDbXllRGxIYm5HRFg?oc=5",
@@ -3070,6 +2966,104 @@
       "date": "2026-10-04",
       "title": "nCino: Healthy Renewals And Modest Valuation",
       "url": "https://seekingalpha.com/article/4951798-ncino-healthy-renewals-and-modest-valuation",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "中信证券股份有限公司关于与特定对象签署附条件生效的股票认购协议暨本次向特定对象发行涉及关联/连交易的公告 - Moomoo",
+      "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxNajh0RzFuVG5YV3NYQ1FZTFJnS0hrUklENFRaZ3UxZERfc2twNDA4dGpSUFI0bUhsaHQ5MTgyNlZ0bHIybHA0ZGt1eFYtQWVhdGo0QzBublF0cFp1RnJkR0laV2lTWHBkcHdCUjExQXNwMFd3X01iX1FHeVFwdHQ0dUhfVTZIeWR1dnpSbWkxRUxCR3l3MXB5Q2FZbllBMmVTbnFnVE84eVlOWkdYM1NWVg?oc=5",
+      "companies": [
+        "中信证券"
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "title": "中国人形机器人崛起背后的“华为军团” - 日经中文网",
+      "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE1oeUljcDFuckFTU0JXaHhZYmNKazd5SGdFWlhSWVhud0otVUl6UmxWRDhfNlNmM0VESF9oaUNZbWZpY1dtd3VaQjhSaHNVYmJPNGNoQlJCUncxMF9kXy1MMVpyQ2o5UXFsRGYyVlZRbzcwa0FGRVE?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "英伟达AI芯片走私案嫌疑人被捕，涉案金额超3亿美元 - 手机新浪网",
+      "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBBclZOSGZYaGJqNTdPTHcwaE9aY0IyTlFXdXdfMVhndTk0ZENEZGgybndablZQMEdWQnVTN19qcDEyY0lsNzNWdWhjdm5DMkNMNTMzbWxLX3d0RjU1UVlXTktTcy0wQmVYczJVZmd1UllOX0E2ZE16aWxjSHE1NnM?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "1nm之后晶体管怎么走？泛林集团探索SA-CFET架构，SRAM单元面积较N3缩小52.7% - 新浪财经",
+      "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxPdGdwMTBGZmtJMHVhZzNmdFpTQlVJbk9ZclF2V1pNRTNEQlRxbUlJeHVRQVFGWC1LZkl1LVlEbER1ZnRLUnJxOW1mREE5SnJxdnZJcWpnTnVfaFhwQmhsYkppTGdkSTlleU5ZNmI5UW5WcTVZRkxYdXdBRzRFNUVxRm5sa3FCNDlWejhrRURfX3puSmVhSUItSmVn?oc=5",
+      "companies": [
+        "泛林集团"
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "title": "长城汽车半年“温差”：销量、利润与品牌的三重分化 - 新浪财经",
+      "url": "https://news.google.com/rss/articles/CBMi8AJBVV95cUxOMm82b1g0bFpQYzJQWU9HS2U3NC1CaHFnUHRUdllqYV9GUUJBbVozbUhMZ3lhanVtZ3BVLTZWV3dEanNzTXpINXZhdllqbFZRbUV3bGwyejB2d3pPUDVZWWNjdWEwUHBLOUpOcFF0dTNvQnlrYW5MWVlvT3kyenJGczYyM2Iybk1jMzVpYlRwZlFpQS1FMzBfcGplblBlNnItTEU4WGVzUmlVLWZ1TUJySllkQm5Qc25vQnFLdEgyckF2dXlYWm9kMUphTjlzR3BaNVN0OUl3ZE5wcGs1Q1JacFF5NEVNRUhCWVN2ZU16Tnl5S1dUYnk2ZERtN09QMUt0dzVUTHZXa21lWFNPRWlSTjJOY18xaXFmWjZ6b2FFOFNnTl8wQWw3cEpvNTNhN1NYaHYwQ1ZpcVJQTXVOYkZNeHM4VkhsWWhJT1ZuWTA3cFpSS3R3UlRHTjZZTXh0cGlkbW1RZ1ZZRlI5VkVWd0dEbw?oc=5",
+      "companies": [
+        "长城汽车"
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "title": "49 起、108 亿：9 月人形机器人融资榜 - 电子工程专辑",
+      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE92dVhmRkhMSkt5RGhIZkRqNFg5S1VHRkhkWHA4R3BON0dQNGhzMmFldGxjeERMLTFjVF85cUluMmM4bzJJcnVmVWxIS1ViWm1ZWmZz?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "老外不吃 “三二一上链接”，中国电商凭什么卖爆全球？丨大象财富 - 手机网易网",
+      "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE1ic05tTDc1MnF2M3Yza1M5eHFGaDlqRlVXLW92QnR0bWRCZWlGS01sbXlteFM3Z3dNck53RlJ2SEVHa3lRSGNXbUdjbmpKckdlZUZweVJzY0ZodDQ4TWptSDVB?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "希捷VS西部数据，AI存储周期下，谁更值得投资？ - TradingKey",
+      "url": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxOSVR0WTBKSHR0YVB3NVhpakJCRE42Q29lU3BGcmRyeHpaZUVOYUM1Y09jclBzUnFJUjRMbG9mejBrcDloYkxEbFVIdkljTmdSc1AyXzRLQ3BRTzlvekJZSzdEVkZka01GblE4T2E0YXJIVGhwY1dLeEc1MnQ1V0NiWlJ5UXlJTXhMcl9ocER3YUlVbGlwVFcwMXAteHVCTUFwTWg1ZUZBcFNONmQ4OW1VTlZTOW80U3Fzd21iTXhGME82ZDlKUllLbnBWZW5OeWVa?oc=5",
+      "companies": [
+        "西部数据"
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "title": "解锁出行新未来 共鉴中国智造硬实力 - 新浪财经",
+      "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE1Fa2FmazlFV0Rpek5BXzZNbzlqbG1vSW5NSko4T1lVVmdDUGxzR01tbGZFZW9ia2VaM3VRbTJqSmZTY0FiYXlQOFdHUXZYeWxhLVcxbzRmSjRmZjBaSTdqbUh3aVZWNlJRbTBkWklUMU9tLUZBWjFvYQ?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "三星正在考虑对 Galaxy S27 Ultra 进行重大改动。 - Vietnam.vn",
+      "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxPN0wwbTVSQzlpMGxON3U5NWdKbC1XRkM4WFIzMEZFaktSdWpUbkMwUG5XVm0zZUFpdUJwcmI0dGszZTYtYUxiOWU1VzFzSndhRHhkaXVtSDU1YmVkNHpzbTBSTUU0RFN1UUotLU9INjRTR2tuQ0N5T3FQZlFjenpNMmdRN2QwcVdtcndpTg?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "存储芯片ETF夜盘涨超18%，它值得投资嘛？ - TradingKey",
+      "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNM0FYSVQwdDVYdThYMk1uUHg1UE9QUndIY0lWRzB3enVyMTdoWWNsaDhhLW5TUTdpS3pHS05OWVJuVFpZd1NNbWxnQWx0WGxHdU9CRmdPU2tUbG1RNmMwMUEtU3RwQkdKSXdxaVZiem41U2RRc2dLRUV4eGxzVTBvQV81RDJscUZBSkFVeFJHc2pZeklZUjBEMWpfY0FzZw?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "Micron: Memory Boom Still Has Legs",
+      "url": "https://seekingalpha.com/article/4951809-micron-memory-boom-still-has-legs",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "好博体育官网app正式上线，多端协同打造一站式体育服务平台 - eeo.com.cn",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBrS3J4NTBvVFVlWUxvMjJYSGxEQV80RHh1TnlsQVlCc251VEdHUHhPM09fbFBtby1nLXF5Sy1KLUNZRVpLWV9YZHp6OGxpa19mQmhQVkhhUE9QQQ?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "AI教育焦虑：中国家长疯狂加码的方向， 美国富人却正在退出 - huxiu.com",
+      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBZUGtMTkxMQy1NNFF0OEFFN3dQRkVnaVRiN0FocFVuUFBSYTFPSlloOW5lRWR0SW12VlJfdm5MY2ItSllybVBXclgyYkxvZTZDRkg4QVdPR1ZwckJNWmh3?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-05",
+      "title": "Micron: The Trade Of The Decade Has Arrived",
+      "url": "https://seekingalpha.com/article/4951825-micron-the-trade-of-the-decade-has-arrived",
       "companies": []
     }
   ]
