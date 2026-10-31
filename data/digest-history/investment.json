@@ -1,100 +1,6 @@
 {
   "items": [
     {
-      "date": "2026-09-30",
-      "title": "Who Gets Paid When AI Does the Shopping? | Andreessen Horowitz",
-      "url": "https://a16z.com/who-gets-paid-when-ai-does-the-shopping",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "Nvidia: The Valuation Still Doesn't Match The AI Growth",
-      "url": "https://seekingalpha.com/article/4950817-nvidia-the-valuation-still-doesnt-match-the-ai-growth",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "机构：晶圆代工与先进封测产能全面吃紧，扩产提速带动设备、零部件、材料供不应求 - 搜狐网",
-      "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQcVFJNm12cUZUc1d5Y0JnUjhSWHg3Q1ZvQ0o4SVRiUjQwbnkzc0pkbmUwcHNJY2RvSHJzUVBPbDVNYnU2RkpJT1FPZWREN2J2d014c2xmZ0N5aER5enZXcWpGNklkdlIzN3pBX2ZZWXJObVVTWlNESnM4ZXlBUUxsYVlBeU92RExXVUhNNQ?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "中信证券：光模块温控正由“配套环节”升级为“性能决定环节” - news.futunn.com",
-      "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxOUWpxcjRObUl5QzBlUHhtZ0xIa09JWFVhZXcwcU1iOVFaX1hYdWFzSkViZmJwbndxeVdIbl9zZ1RIX3VRNTNERV9ydlNYZ1hKbURLbUN0MW1OSXFQMzV4SlY5cllZa0E1YzJFSHFZemVvZWZUR0RPMzJYaktha3ZLM3R1QTVhT3lOZnNNazNjenctUWlNeEdqT0VFSkZrNmY3T3g1dFNWMmt3eVpXdk16TDNLaw?oc=5",
-      "companies": [
-        "中信证券"
-      ]
-    },
-    {
-      "date": "2026-09-30",
-      "title": "比亚迪西咸基地动力电池项目全面投产，10个月完成从签约到首线电芯下线 - Moomoo",
-      "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBHRDRSS2Q2aERycWRZSDNWd1dSTkpFeG5vQURjMkV5a0J5U2Nud0FYY1g4YlZMVEhLbWM2eUtwbWszWEs1ZzlMMS16bWd0MmVuZERhWkw1bF92Q2Jr?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "供应吃紧，机构上调HBM价格展望（附股）_个股掘金 - 证券之星",
-      "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE9tcjRrSHYxSndocERLOGtYdDgtbVN6c3VSZlJlSjVWYVBUeE0yTWt2R1FPcnMxNVpjS3Q0bjI5XzFZN1I1OWlwREx1R2JlU0oybHozVFBoSDhNUDBLRzdQWldB?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "Alphabet: The AI Winner Nobody Is Talking About",
-      "url": "https://seekingalpha.com/article/4950835-alphabet-the-ai-winner-nobody-is-talking-about",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "Oura Hits Pause On IPO While Anthropic’s Prospectus Reveals The Cost Of Its AI Ambitions",
-      "url": "https://news.crunchbase.com/public/oura-pauses-ipo-anthropics-ai-openai",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "解决连续作业难题 德塔智能优化人形机器人全身协同能力 - 中国日报网",
-      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBmS0xwWUhZU1JJdUxtcGlrakYwR0hZZUU1SmZSN1lrZkdaWkJndzNGN0g5NzJzaDZnZlRSSHdPOFNCaFNQcXU4eTV1cmRQOHNLcTFKS3ZOZnF0RkpRQjlPNUdCY1pQdzhkcHFWbVBIVmQ3MllUVGN0UVdLNG0?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "即时零售完成用户培育，没有羊毛可薅了 - 搜狐网",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNWGxQa0hZUF9yeDVFZ0c3SnluZThYbkRDanNKYk5iZ0FYb2UydktUMHZHYkRGczhTdUhncGpZcDZpQkZvczJqVUpMLXFYSF9TendfRVB0Q1duR01lRDdWWjIyZ21NOWdOZEhHbUZmbjNhN1NQUG45VU1pWW5UQjFlZGFfZXN3RWJL?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "三星晶圆代工客户2029年将增至2017年约4倍 HPC占比升至66% - 观点网",
-      "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE5JMVdjS3ppZHlmYldPWG95NEZFdlA0bmRORUNvWG01SzBkeFhWZDM4TmxRbnJhS2dpNF9oLVpWdWREM1RVeEF5OWZFWkN2ZVdTVWpEa2pfa3pobnRUMFFJYjRR?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "字节系AI教育摆阵：“工具”退场，“课堂”进化 - 多知网",
-      "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTE9fc251S2FUZmVCd2FQakhVLVlvSzljTlh6REZsYXF1dWxZTVEtVWgtZG5ISFdQWlN4RHBlNC1PVFJYNmNzby10cVVLUkRyYlc2Wm85QkhxZnBPOTNPakI2ZmljSzMtN0hSd1E?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "AI算力需求带动存储芯片升级 产业链景气度获机构看好 - 东方财富",
-      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE9qTWdqbEhvc1I3a09pMkxZT2dQaVdKeXNiS0hhaTdyTFEtak84MzFLTG1uenVWNTlLSTIweVFfVEJTRFVBR0FMazM4OUs2Vzd5V3ZiRFlDQjRUTTRmX1lpRQ?oc=5",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "OpenAI Understands Something Important and Rare | Andreessen Horowitz",
-      "url": "https://a16z.com/openai-understands-something-important-and-rare",
-      "companies": []
-    },
-    {
-      "date": "2026-09-30",
-      "title": "NVIDIA 发布开放智能体安全平台，保障智能体从测试到部署全流程安全 - NVIDIA",
-      "url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTFBwbUpuMmZnZXJraWIzNVJTbTJIZmJnNGZFY3Bnb1VsbG0ybXotN00wVzFCcDNfZ0pkcG81VlhhS2hkeVJXNGFLX21CQnVyckdaaGIzN01uYXdOcWp1d1pUaE9DeGJvbHc?oc=5",
-      "companies": [
-        "英伟达"
-      ]
-    },
-    {
       "date": "2026-10-01",
       "title": "泛林集团宣布九月季度财务电话会议 - Moomoo",
       "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxORGFJZWRTSENDQUQwWFhHc281b2hfVHdrUDlWSThvTEo0R1A0YUdTNmI3LUhlbUZDSjdVVndxanRpSDlDbHFfLWZKZU15aF9tZXA1YUY4RlU2N1FpeHc2TDRObFZETWdkWnczN01UV3BVbEprdWRMWTZSVGRYSTNIeDljMG1kUEd0alBrRVFoaGdCQjNobE5seFFWeFdoQnlTdlE1X3pFUG9uSFRBaUYya21pTGJRZmVEVjFvdU14V0VLRldWNHc?oc=5",
@@ -3018,6 +2924,100 @@
       "date": "2026-10-30",
       "title": "成都公交携手宁德时代 成都再添动力电池专业服务平台 - 四川新闻",
       "url": "https://news.google.com/rss/articles/CBMiY0FVX3lxTE1VQkhGMW1LbXVRUFNPS3pJbWEzODYtdUhMbVJ6b3gtMl8wZzVQbXZmZ1RDVFY4UVpIMUpoZEZqbjVNLTBUeU9hcGV6bl9hOXBsVGJnVEFVNjFERUtDTFZ1M202WQ?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "美团弯腰捡钢镚 - 投资界",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE05TUtCV1dhX0dSLUQ2dFJCanpoTzVYU01abjR2dWZXT2tOV0JoUzJVQmRmTWZMeHZWaTdhZm1PeWZhSTR4V0UzajJYYXhzR3NRM2ljZzdR?oc=5",
+      "companies": [
+        "美团"
+      ]
+    },
+    {
+      "date": "2026-10-31",
+      "title": "湖南日报看郴州丨第四届动力电池质量安全大会在郴州临武召开 - 新湖南",
+      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBfVzY0RDVhXzk2bkptdmlZaXhOZ18xUE9LX0xyVlFyU0JOaGhybjF0eUdRZmlfeVJwWGdVUUk0VGdjODJZVGoxODhjX2JudHVSVERXbzJwQ2U4Wm9PaXBV?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "第四届动力电池质量安全大会在湖南临武举行 - 中国科技网",
+      "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE0zMm0zbDNUMHVUbnRUQUdySGpEWHk0cHpBN3VqMlBwQjFEZUtCVV9jRFVzS0NRVlBjTDN1Z1VNd3FkU3hFTlNOTUpncm5vaGVZN3l6YjdNbDNYUW9yRUdwd0F6UWxma2tna3VQMHBUUjc?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "台积电共同营运长秦永沛亲述\"夜鹰计划\"：晶圆代工竞争靠的是脑力不是工时 - 电子工程专辑",
+      "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE1JWVFDb3lPNFpGTnVIa3V2TlE3TE1FSUdPWnZ6QlU4dHdWOFQxbXZDamktZVFLdmNFUDE5eUtpb0dldHdyTk1JT3dqV1Y5NjB2cl9LXy05dFJEMFhp?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "云天励飞发布三季报：研发投入持续加码 自研人工智能芯片布局提速 - 东方财富",
+      "url": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE5tZWNYd2pBejZocWY3NS1IOWRKeUQ0YW01R2hUMEZXV1NpYUFmUVJpWW5TeUN6VVFQWjZMRTF5OURvVFREUUZ4Y1BKYU1CVldYaFlEYUU2eE1jU1BGX09QSmp0RGo1dw?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "富维股份10月30日回应人形机器人话题：与月泉仿生等设应用实验室，部分零部件已小批量交付_公司新闻 - 证券之星",
+      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE1JaHNMR1NCVzFGcFNKUnZQVjVLM0cwTG84QmNmQV9IeGtITWp4b01sSTQ4Sk1DUldKOGRnUURJeUFfR3ItSHVtVUlWSUExMVF0S0tKLVNUTkFoVmE2a191LQ?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "即时零售的“刀”，重新分配酒水生意的“蛋糕” - Jiemian.com",
+      "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE9vNjh3QUt5ZEN4ZU9xSEVYbzVxTWhwd2xKYXhCY3B3YUdWVEdvZGoyZ0w4WGRUY0g1R1lRN3NJUjZMZTF4aWJBTFgtT0xzS0NTMU8xRWo3NVg?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "国际复材10月30日回应AI芯片封装材料话题：称具备相关材料研发生产能力_公司新闻 - 证券之星",
+      "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE52OHFYTFg5eHY5a2x1QjQ1aHFrLU1RV2lKRHlzY2xRUENZdGE1ZlhSSU96c3hqQVJlXzBSVi15UDdHcjBzdExDTUpfNGduOWkxQnp4cFd2bUdBY1lHYkhadzVB?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "存储芯片短缺巩固长鑫存储中国芯片业领军地位 - 华尔街日报中文网",
+      "url": "https://news.google.com/rss/articles/CBMiygJBVV95cUxORlJYS0FoeGtsYkRvalFpUW9FZ09sdkp0SzBLRVpub0ZmRm9yLXhoZUVPNDBkb1dqUm5uZkk5bG0zMFZTbVdIcml1VlZQWTh0ZUhhRkI0M28xV202aHE0VmRzTi10Z3oycFZtWTJNd1FObDUyQ0pqMDhia1JZTVdJNlZMOWZvdFNHR0NKQXFDbG5UcWV6RG1hUmdkRm9QV0dVUFBGM3JybFRsdlNOdlhsdTdCZHRBbWlqMkpLZXVsSXpLNDExbTNRRkg4R1dQQWJ6cnNSS3pydXNxTXozNkl6NVdrcUpNaTY1UGlUcXZ1WEpNRUVMVEtfMG1RN25nbmtLcHZMVWpDWUFkNlpNTFI4Y2lyaDdPUFAySGEwT3c4OERvaWVqUk5MajRmanh1U2MwMnc2LTh0alM3MmdlaGpadDZNRm9SQ1dFcnc?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "天和磁材披露广东子公司布局人形机器人等业务 资本运作审慎推进 - 观点网",
+      "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE1DMmJRb2RfYWhBTGV4VWFFRTNjUGhwZ2ZHdXRCXzFrc0I0M1VWVXAxeXdIcXptWW9GeEtIckZzdTZpUUhWN0VrU2N1SUw5NUhueU56Yjk3X3Z4X2VlLTJha2NR?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "又见通报！华创证券e智通：金融科技战略下的数据合规短板 - 搜狐网",
+      "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxNcXVneVpYMUdJZzQtWVJ4bEpqZTlnSUFiX1E2S0lkYVhXWEhLUkI0UW15ZEpXaTJrRU9rWXpkeDVtVE5QeFhwMU5VZFJ4blVLR3lOanFadXAzUFFPTzVwMHB0Z3JlTXF6ai1idUQ4RjQ5M1dldTVSaFZzQW8ybDZmZXVwdzZnekZrV3RQbw?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "存储芯片下跌只是刚刚开始 - 风闻",
+      "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE52aXdsRW1IMHBpN1ZoQzRTbkRxN3pXN1phb21FNEczZXhvd3NmQ240aXRjcVYwYVNFb2hwellaYV9uMUx2ZTIxaGVTeHJTNXNUbmlVYVh2dWlWRXc?oc=5",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "DoorDash And Instacart Earnings: Solid Quarterly Results, Questionable Merger",
+      "url": "https://seekingalpha.com/article/4960289-doordash-and-instacart-earnings-solid-quarterly-results-questionable-merger",
+      "companies": []
+    },
+    {
+      "date": "2026-10-31",
+      "title": "XPeng Mona L05 准备进军全球市场！未来有望登陆大马！ - automachi.com",
+      "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE1jdThZQmVQNERwN1cyOWhmZDM1aFR4T3NqY1ptZk5kRjFMR2t0RkY2MndCTF9aTlBDODVZRGRiSGd3bWlHZDFveXNYLUl6cW9CMFNpR2IxRU9uV3owRXptaTA1ZHFsX0NhbTFzZzRKanNtUy1lM1p3?oc=5",
+      "companies": [
+        "小鹏汽车"
+      ]
+    },
+    {
+      "date": "2026-10-31",
+      "title": "鸿蒙生态十一出境游洞察，文旅营销先机在哪？ - 凤凰网",
+      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTFBmY0FqeEtwNk1CV2pETk5haEF4Q2xsNUJTb1hmQ09fMzdidnVsNU5IMC00QWphRElpVTc4cG5xZ0l0N3JXbkRFejBabFhRdndt?oc=5",
       "companies": []
     }
   ]
